@@ -1,35 +1,10 @@
-/* ============================================================
-   FreeSMS.live — Application Logic v2 (Fixed)
-   ============================================================ */
-
+/* FreeSMS.live — app.js v4 (Final) */
 'use strict';
 
-const WORKER = 'https://sms-proxy.mojahidulislamzihad686.workers.dev';
+const W = 'https://sms-proxy.mojahidulislamzihad686.workers.dev';
 
-/* ── STATIC DATA ── */
-
-const SERVICES = [
-  { id:'google',    name:'Google',      icon:'🔍' },
-  { id:'gmail',     name:'Gmail',       icon:'📧' },
-  { id:'whatsapp',  name:'WhatsApp',    icon:'💬' },
-  { id:'telegram',  name:'Telegram',    icon:'✈️' },
-  { id:'facebook',  name:'Facebook',    icon:'📘' },
-  { id:'instagram', name:'Instagram',   icon:'📷' },
-  { id:'twitter',   name:'Twitter/X',   icon:'🐦' },
-  { id:'tiktok',    name:'TikTok',      icon:'🎵' },
-  { id:'discord',   name:'Discord',     icon:'🎮' },
-  { id:'snapchat',  name:'Snapchat',    icon:'👻' },
-  { id:'tinder',    name:'Tinder',      icon:'🔥' },
-  { id:'uber',      name:'Uber',        icon:'🚗' },
-  { id:'paypal',    name:'PayPal',      icon:'💳' },
-  { id:'amazon',    name:'Amazon',      icon:'📦' },
-  { id:'binance',   name:'Binance',     icon:'🪙' },
-  { id:'linkedin',  name:'LinkedIn',    icon:'💼' },
-  { id:'microsoft', name:'Microsoft',   icon:'🪟' },
-  { id:'other',     name:'Other',       icon:'📱' },
-];
-
-const COUNTRIES_UI = [
+/* ── DATA ── */
+const COUNTRIES = [
   { code:'ID', flag:'🇮🇩', name:'Indonesia',     sub:'10+ numbers' },
   { code:'TH', flag:'🇹🇭', name:'Thailand',      sub:'10+ numbers' },
   { code:'VN', flag:'🇻🇳', name:'Vietnam',       sub:'10+ numbers' },
@@ -37,389 +12,314 @@ const COUNTRIES_UI = [
   { code:'US', flag:'🇺🇸', name:'United States', sub:'15+ numbers' },
 ];
 
+const SERVICES = [
+  { id:'google',    name:'Google / Gmail', icon:'🔍' },
+  { id:'whatsapp',  name:'WhatsApp',       icon:'💬' },
+  { id:'telegram',  name:'Telegram',       icon:'✈️' },
+  { id:'facebook',  name:'Facebook',       icon:'📘' },
+  { id:'instagram', name:'Instagram',      icon:'📷' },
+  { id:'twitter',   name:'Twitter / X',    icon:'🐦' },
+  { id:'tiktok',    name:'TikTok',         icon:'🎵' },
+  { id:'discord',   name:'Discord',        icon:'🎮' },
+  { id:'snapchat',  name:'Snapchat',       icon:'👻' },
+  { id:'tinder',    name:'Tinder',         icon:'🔥' },
+  { id:'uber',      name:'Uber',           icon:'🚗' },
+  { id:'paypal',    name:'PayPal',         icon:'💳' },
+  { id:'amazon',    name:'Amazon',         icon:'📦' },
+  { id:'binance',   name:'Binance',        icon:'🪙' },
+  { id:'microsoft', name:'Microsoft',      icon:'🪟' },
+  { id:'other',     name:'Other',          icon:'📱' },
+];
+
 /* ── STATE ── */
+let cSel  = null;   // selected country object
+let sSel  = null;   // selected service object
+let nSel  = null;   // selected number object
+let nums  = [];     // fetched numbers array
+let timer = null;   // poll timer
+let busy  = false;  // loading flag
 
-const state = {
-  step:      1,
-  country:   null,
-  service:   null,
-  numbers:   [],
-  number:    null,
-  pollTimer: null,
-  loading:   false,
-};
-
-/* ── INIT ── */
-
+/* ── BOOT ── */
 document.addEventListener('DOMContentLoaded', () => {
-  renderCountries();
-  goStep(1);
+  buildCountries();
+  buildServices();
+  show(1);
 
+  // Step bar click
   document.getElementById('stepBar').addEventListener('click', e => {
-    const tab = e.target.closest('[data-step]');
-    if (!tab || !tab.classList.contains('clickable')) return;
-    goStep(parseInt(tab.dataset.step, 10));
+    const t = e.target.closest('.st');
+    if (t && t.classList.contains('go')) {
+      const n = parseInt(t.dataset.step);
+      if (n === 1) back1();
+      else if (n === 2) back2();
+      else if (n === 3) back3();
+    }
   });
 });
 
-/* ── NAVIGATION ── */
-
-function goStep(n) {
-  if (n === 2 && !state.country) { goStep(1); return; }
-  if (n === 3 && !state.service) { goStep(state.country ? 2 : 1); return; }
-
-  stopPolling();
-  state.step = n;
-
-  ['step1','step2','step3','smsPanel'].forEach(id => {
-    document.getElementById(id).classList.add('hidden');
-  });
-  document.getElementById('step' + n).classList.remove('hidden');
-
+/* ── SHOW STEP ── */
+function show(n) {
+  ['s1','s2','s3','panel'].forEach(id => document.getElementById(id).classList.add('dn'));
+  document.getElementById('s' + n).classList.remove('dn');
   [1,2,3].forEach(i => {
-    const tab = document.getElementById('tab' + i);
-    tab.className = 'step-tab';
-    const canClick =
-      (i === 1 && state.country) ||
-      (i === 2 && state.service) ||
-      (i === 3 && state.number);
-    if (i < n && canClick) tab.classList.add('done','clickable');
-    else if (i === n)      tab.classList.add('active');
+    const t = document.getElementById('tab' + i);
+    t.className = 'st';
+    const can = (i===1&&cSel)||(i===2&&sSel)||(i===3&&nSel);
+    if (i < n && can) t.classList.add('done','go');
+    else if (i === n) t.classList.add('active');
   });
-
-  if (n === 3 && state.numbers.length > 0) renderNumbers(state.numbers);
 }
 
-function goHome() {
-  stopPolling();
-  Object.assign(state, { step:1, country:null, service:null, numbers:[], number:null, pollTimer:null, loading:false });
-  renderCountries();
-  goStep(1);
-}
+/* ── BACK ── */
+function back1() { kill(); cSel=null; sSel=null; nSel=null; nums=[]; buildCountries(); show(1); }
+function back2() { kill(); sSel=null; nSel=null; show(2); }
+function back3() { kill(); nSel=null; show(3); if (nums.length) buildNums(nums); }
 
 /* ── COUNTRIES ── */
-
-function renderCountries() {
-  document.getElementById('countryGrid').innerHTML = COUNTRIES_UI.map(c => `
-    <div class="country-card ${state.country?.code === c.code ? 'sel' : ''}"
-         onclick="App.selectCountry('${c.code}')" role="button" tabindex="0"
-         onkeydown="if(event.key==='Enter')App.selectCountry('${c.code}')">
-      <span class="cc-flag">${c.flag}</span>
-      <div>
-        <div class="cc-name">${c.name}</div>
-        <div class="cc-sub">${c.sub}</div>
-      </div>
-    </div>
-  `).join('');
+function buildCountries() {
+  document.getElementById('cgrid').innerHTML = COUNTRIES.map(c => `
+    <div class="ccard${cSel?.code===c.code?' on':''}"
+         onclick="pickCountry('${c.code}')">
+      <span class="cflag">${c.flag}</span>
+      <div><div class="cname">${c.name}</div><div class="csub">${c.sub}</div></div>
+    </div>`).join('');
 }
 
-async function selectCountry(code) {
-  const c = COUNTRIES_UI.find(x => x.code === code);
-  if (!c) return;
-  state.country = c;
-  renderCountries();
-  document.getElementById('step2Lbl').textContent =
-    `— ${c.flag} ${c.name} — কোন service এর জন্য?`;
-  renderServices();
-  goStep(2);
+function pickCountry(code) {
+  cSel = COUNTRIES.find(c => c.code === code);
+  buildCountries();
+  document.getElementById('s2lbl').textContent = `— ${cSel.flag} ${cSel.name} · service বেছে নাও`;
+  show(2);
 }
 
 /* ── SERVICES ── */
-
-function renderServices() {
-  document.getElementById('serviceGrid').innerHTML = SERVICES.map(s => `
-    <div class="service-card ${state.service?.id === s.id ? 'sel' : ''}"
-         onclick="App.selectService('${s.id}')" role="button" tabindex="0"
-         onkeydown="if(event.key==='Enter')App.selectService('${s.id}')">
-      <div class="sc-icon">${s.icon}</div>
-      <div class="sc-name">${s.name}</div>
-    </div>
-  `).join('');
+function buildServices() {
+  document.getElementById('sgrid').innerHTML = SERVICES.map(s => `
+    <div class="scard${sSel?.id===s.id?' on':''}"
+         onclick="pickService('${s.id}')">
+      <div class="sicon">${s.icon}</div>
+      <div class="sname">${s.name}</div>
+    </div>`).join('');
 }
 
-async function selectService(id) {
-  const s = SERVICES.find(x => x.id === id);
-  if (!s) return;
-  state.service = s;
-  renderServices();
-  document.getElementById('step3Lbl').textContent =
-    `— ${state.country.flag} ${state.country.name} · ${s.icon} ${s.name}`;
-  goStep(3);
-  await fetchNumbers();
+function pickService(id) {
+  sSel = SERVICES.find(s => s.id === id);
+  buildServices();
+  document.getElementById('s3lbl').textContent =
+    `— ${cSel.flag} ${cSel.name} · ${sSel.icon} ${sSel.name}`;
+  show(3);
+  loadNums();
 }
 
-/* ── FETCH NUMBERS ── */
-
-async function fetchNumbers() {
-  const el = document.getElementById('numList');
-  el.innerHTML = shimmerHTML(3);
-
+/* ── LOAD NUMBERS ── */
+async function loadNums() {
+  const el = document.getElementById('nlist');
+  el.innerHTML = shims(3);
   try {
-    const res  = await fetchWithTimeout(`${WORKER}/numbers/${state.country.code}`, 12000);
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
-    const data = await res.json();
-    if (!data.ok || !Array.isArray(data.numbers)) throw new Error(data.error || 'No numbers returned');
-    state.numbers = data.numbers;
-    renderNumbers(data.numbers);
-  } catch (e) {
-    el.innerHTML = stateHTML('⚠️',
-      `Numbers load হয়নি।<br>
-       <small>${esc(e.message)}</small><br><br>
-       <button class="get-btn" onclick="App.fetchNumbers()"
-               style="font-size:11px;padding:8px 16px">↻ আবার চেষ্টা করো</button>`);
+    const r = await tFetch(`${W}/numbers/${cSel.code}`, 13000);
+    const d = await r.json();
+    if (!d.ok || !Array.isArray(d.numbers) || !d.numbers.length) throw new Error('No numbers found');
+    nums = d.numbers;
+    buildNums(nums);
+  } catch(e) {
+    el.innerHTML = box('⚠️',
+      `Numbers load হয়নি।<br><small>${xe(e.message)}</small><br><br>
+       <button class="gbtn" onclick="loadNums()" style="font-size:11px;padding:8px 16px">
+         ↻ আবার চেষ্টা
+       </button>`);
   }
 }
 
-/* ── RENDER NUMBERS ── */
-
-function renderNumbers(numbers) {
-  const el = document.getElementById('numList');
-  if (!numbers.length) {
-    el.innerHTML = stateHTML('📵',
-      `${state.country.flag} ${state.country.name} তে এখন কোনো number নেই।<br>
-       অন্য দেশ try করো।<br><br>
-       <button class="back-btn" onclick="App.goStep(1)"
-               style="margin:0 auto;display:inline-flex">← দেশ পরিবর্তন করো</button>`);
+function buildNums(list) {
+  const el = document.getElementById('nlist');
+  if (!list.length) {
+    el.innerHTML = box('📵',
+      `এই দেশে এখন number নেই।<br>
+       <button class="backbtn" onclick="back1()" style="margin:8px auto 0;display:inline-flex">
+         ← দেশ বদলাও
+       </button>`);
     return;
   }
-
-  el.innerHTML = `<div class="num-list">` +
-    numbers.map(n => `
-      <div class="num-card" id="card_${n.id}">
-        <div class="num-info">
-          <div class="num-number">${esc(n.number)}</div>
-          <div class="num-meta">
-            ${n.flag || state.country.flag} ${n.label || state.country.name}
-            &nbsp;·&nbsp; ${state.service.icon} ${state.service.name}
-          </div>
-        </div>
-        <button class="get-btn" id="btn_${n.id}"
-                onclick="App.getNumber('${n.id}')">
-          Get Number →
-        </button>
+  el.innerHTML = `<div class="nlist">` + list.map((n, i) => `
+    <div class="ncard">
+      <div class="ninfo">
+        <div class="nnum">${xe(n.number)}</div>
+        <div class="nmeta">${n.flag||cSel.flag} ${n.label||cSel.name} · ${sSel.icon} ${sSel.name}</div>
       </div>
-    `).join('') + `</div>`;
+      <button class="gbtn" data-i="${i}" onclick="pickNum(${i})">Get Number →</button>
+    </div>`).join('') + `</div>`;
 }
 
-/* ── GET NUMBER ── */
+/* ── PICK NUMBER ── */
+function pickNum(i) {
+  nSel = nums[i];
+  if (!nSel) return;
+  kill();
 
-async function getNumber(id) {
-  const num = state.numbers.find(n => n.id === id);
-  if (!num) return;
-  state.number = num;
+  // Disable all Get buttons
+  document.querySelectorAll('.gbtn').forEach(b => b.disabled = true);
 
-  // Disable all buttons to prevent double-click
-  document.querySelectorAll('.get-btn').forEach(b => { b.disabled = true; });
-
-  // Hide step panels
-  ['step1','step2','step3'].forEach(i =>
-    document.getElementById('step' + i).classList.add('hidden')
-  );
-
-  // Mark all tabs as done & clickable
+  // Hide steps, all tabs done
+  ['s1','s2','s3'].forEach(id => document.getElementById(id).classList.add('dn'));
   [1,2,3].forEach(i => {
-    const tab = document.getElementById('tab' + i);
-    tab.className = 'step-tab done clickable';
+    const t = document.getElementById('tab' + i);
+    t.className = 'st done go';
   });
 
-  // Show SMS panel
-  const panel = document.getElementById('smsPanel');
-  panel.classList.remove('hidden');
-  renderSMSPanelShell();
-  await loadSMS();
-
-  stopPolling();
-  state.pollTimer = setInterval(loadSMS, 15000);
-}
-
-/* ── SMS PANEL SHELL ── */
-
-function renderSMSPanelShell() {
-  const n = state.number;
-  const s = state.service;
-  const c = state.country;
-
-  document.getElementById('smsPanel').innerHTML = `
-    <div class="sms-panel">
-      <div class="sms-panel-head">
+  // Build panel
+  const panel = document.getElementById('panel');
+  panel.classList.remove('dn');
+  panel.innerHTML = `
+    <div class="spanel">
+      <div class="sph">
         <div>
-          <div style="font-size:10px;color:var(--txt2);text-transform:uppercase;
-                      letter-spacing:1px;margin-bottom:5px">তোমার number</div>
-          <div class="panel-number">${esc(n.number)}</div>
-          <div class="panel-meta">${n.flag || c.flag} ${n.label || c.name}</div>
-          <div class="panel-badges">
-            <span class="badge badge-svc">${s.icon} ${s.name}</span>
-            <span class="badge badge-live">
-              <span class="dot" style="width:5px;height:5px"></span>Live
-            </span>
+          <div style="font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">তোমার number</div>
+          <div class="sp-num">${xe(nSel.number)}</div>
+          <div class="sp-meta">${nSel.flag||cSel.flag} ${nSel.label||cSel.name}</div>
+          <div class="sp-tags">
+            <span class="tag tag-svc">${sSel.icon} ${sSel.name}</span>
+            <span class="tag tag-live"><span class="dot" style="width:5px;height:5px;margin:0"></span>&nbsp;Live</span>
           </div>
         </div>
-        <div class="panel-actions">
-          <button class="refresh-btn" id="refreshBtn" onclick="App.loadSMS()">
-            <span id="refreshIcon">↻</span>&nbsp;Refresh
+        <div class="spa">
+          <button class="rbtn" id="rbtn" onclick="doRefresh()">
+            <span id="ric">↻</span> Refresh
           </button>
-          <div class="panel-nav">
-            <button class="panel-nav-btn" onclick="App.goStep(3)">← অন্য number</button>
-            <button class="panel-nav-btn" onclick="App.goStep(2)">← Service বদলাও</button>
-            <button class="panel-nav-btn" onclick="App.goStep(1)">← দেশ বদলাও</button>
+          <div class="navbtns">
+            <button class="navbtn" onclick="back3()">← অন্য number</button>
+            <button class="navbtn" onclick="back2()">← Service বদলাও</button>
+            <button class="navbtn" onclick="back1()">← দেশ বদলাও</button>
           </div>
         </div>
       </div>
-      <div id="smsContent">${shimmerHTML(2)}</div>
-    </div>
-  `;
+      <div id="smsc">${shims(2)}</div>
+    </div>`;
+
+  fetchSMS();
+  timer = setInterval(fetchSMS, 15000);
 }
 
-/* ── LOAD SMS ── */
+/* ── FETCH SMS ── */
+async function fetchSMS() {
+  if (busy) return;
+  busy = true;
 
-async function loadSMS() {
-  if (state.loading) return;
-  state.loading = true;
+  const rb  = document.getElementById('rbtn');
+  const ric = document.getElementById('ric');
+  const sc  = document.getElementById('smsc');
 
-  const btn     = document.getElementById('refreshBtn');
-  const icon    = document.getElementById('refreshIcon');
-  const content = document.getElementById('smsContent');
-
-  if (btn)  btn.disabled  = true;
-  if (icon) { icon.className = 'spin'; icon.textContent = '↻'; }
+  if (rb)  rb.disabled = true;
+  if (ric) ric.className = 'spin';
 
   try {
-    const numId = state.number.id;
-    const res   = await fetchWithTimeout(`${WORKER}/sms/${encodeURIComponent(numId)}`, 14000);
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
-    const data  = await res.json();
-    const msgs  = Array.isArray(data.messages) ? data.messages : [];
-    if (content) renderSMSMessages(content, msgs);
-  } catch (e) {
-    if (content) content.innerHTML = `
-      <div class="waiting-box">
-        <div class="waiting-text">
-          SMS load হয়নি।<br>
-          <button class="get-btn" onclick="App.loadSMS()"
-                  style="font-size:11px;padding:8px 16px;margin-top:12px">
-            ↻ আবার চেষ্টা করো
+    const r = await tFetch(`${W}/sms/${encodeURIComponent(nSel.id)}`, 15000);
+    const d = await r.json();
+    const m = Array.isArray(d.messages) ? d.messages : [];
+    if (sc) renderSMS(sc, m);
+  } catch(e) {
+    if (sc) sc.innerHTML = `
+      <div class="waitbox">
+        <div class="waittxt">SMS load হয়নি।<br>
+          <button class="gbtn" onclick="doRefresh()" style="font-size:11px;padding:8px 16px;margin-top:10px">
+            ↻ আবার চেষ্টা
           </button>
         </div>
       </div>`;
   } finally {
-    state.loading = false;
-    if (btn)  btn.disabled  = false;
-    if (icon) { icon.className = ''; icon.textContent = '↻'; }
+    busy = false;
+    if (rb)  rb.disabled = false;
+    if (ric) { ric.className = ''; ric.textContent = '↻'; }
   }
 }
 
-/* ── RENDER SMS MESSAGES ── */
+function doRefresh() { busy = false; fetchSMS(); }
 
-function renderSMSMessages(el, messages) {
-  if (!messages.length) {
+/* ── RENDER SMS ── */
+function renderSMS(el, msgs) {
+  if (!msgs.length) {
     el.innerHTML = `
-      <div class="waiting-box">
-        <div style="font-size:36px;margin-bottom:14px">📬</div>
-        <div class="waiting-text">
-          <strong style="color:var(--ac3)">${esc(state.number.number)}</strong>
-          এ এখনো কোনো SMS আসেনি।<br>
-          এই number টা ${state.service.icon}
-          <strong>${state.service.name}</strong> এ দাও।<br>
-          SMS আসলে এখানে দেখাবে <span class="cursor">▋</span>
+      <div class="waitbox">
+        <div style="font-size:34px;margin-bottom:13px">📬</div>
+        <div class="waittxt">
+          <strong style="color:var(--ac3)">${xe(nSel.number)}</strong> এ এখনো SMS আসেনি।<br>
+          এই number টা <strong>${sSel.name}</strong> এ দাও।<br>
+          SMS আসলে এখানে দেখাবে <span class="cur">▋</span>
         </div>
-        <div class="auto-refresh-note">প্রতি ১৫ সেকেন্ডে auto-refresh হচ্ছে</div>
+        <div class="arnote">প্রতি ১৫ সেকেন্ডে auto-refresh হচ্ছে</div>
       </div>`;
     return;
   }
 
-  el.innerHTML = `<div class="sms-list">` +
-    messages.map(m => {
-      const otp = extractOTP(m.body);
-      // Unique id for copy button
-      const btnId = 'copy_' + Math.random().toString(36).slice(2);
+  el.innerHTML = `<div class="smsl">` +
+    msgs.map(m => {
+      const otp = getOTP(m.body);
       return `
-        <div class="sms-card">
-          <div class="sms-head">
-            <span class="sms-from">${esc(m.from || 'Unknown')}</span>
-            <span class="sms-time">${esc(m.time || '')}</span>
+        <div class="smsc">
+          <div class="smsh">
+            <span class="smsf">${xe(m.from||'Unknown')}</span>
+            <span class="smst">${xe(m.time||'')}</span>
           </div>
-          <div class="sms-body">${esc(m.body || '')}</div>
+          <div class="smsb">${xe(m.body||'')}</div>
           ${otp ? `
-            <div class="otp-box">
+            <div class="otpbox">
               <div>
-                <div class="otp-lbl">OTP Code</div>
-                <div class="otp-code" id="otp_${btnId}">${otp}</div>
+                <div class="otpl">OTP Code</div>
+                <div class="otpn">${otp}</div>
               </div>
-              <button class="copy-btn" id="${btnId}"
-                      onclick="App.copyOTP(this,'${otp}')">
-                Copy
-              </button>
+              <button class="cpbtn" onclick="doCopy(this,'${otp}')">Copy</button>
             </div>` : ''}
         </div>`;
     }).join('') + `</div>`;
 }
 
-/* ── HELPERS ── */
+/* ── UTILS ── */
+function getOTP(t) { const m=(t||'').match(/\b(\d{4,8})\b/); return m?m[1]:null; }
 
-function extractOTP(text) {
-  if (!text) return null;
-  const m = text.match(/\b(\d{4,8})\b/);
-  return m ? m[1] : null;
+function xe(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-function esc(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function shims(n) {
+  return Array.from({length:n},(_,i)=>
+    `<div class="shim" style="height:${78-i*9}px;opacity:${1-i*0.28}"></div>`).join('');
 }
 
-function shimmerHTML(count) {
-  return Array.from({ length: count }, (_, i) =>
-    `<div class="shimmer" style="height:${80-i*10}px;opacity:${1-i*0.25}"></div>`
-  ).join('');
+function box(icon, html) {
+  return `<div class="sbox"><div class="sbox-icon">${icon}</div><div class="sbox-txt">${html}</div></div>`;
 }
 
-function stateHTML(icon, text) {
-  return `<div class="state-box"><div class="state-icon">${icon}</div><div class="state-text">${text}</div></div>`;
+async function tFetch(url, ms) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), ms);
+  try { const r = await fetch(url,{signal:c.signal}); clearTimeout(t); return r; }
+  catch(e) { clearTimeout(t); throw e.name==='AbortError'?new Error('Timeout'):e; }
 }
 
-async function fetchWithTimeout(url, ms = 12000) {
-  const ctrl  = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    clearTimeout(timer);
-    return res;
-  } catch (e) {
-    clearTimeout(timer);
-    throw e.name === 'AbortError' ? new Error('Request timed out') : e;
-  }
+function kill() { if(timer){clearInterval(timer);timer=null;} busy=false; }
+
+function doCopy(btn, code) {
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✓ Copied'; btn.classList.add('ok');
+    toast('OTP copied!','ok');
+    setTimeout(() => { btn.textContent='Copy'; btn.classList.remove('ok'); }, 2000);
+  }).catch(() => toast('Copy failed','err'));
 }
 
-function stopPolling() {
-  if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; }
-}
-
-function copyOTP(btn, code) {
-  navigator.clipboard.writeText(code)
-    .then(() => {
-      btn.textContent = '✓ Copied';
-      btn.classList.add('copied');
-      showToast('OTP copied!', 'ok');
-      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
-    })
-    .catch(() => showToast('Copy failed', 'err'));
-}
-
-function showToast(msg, cls = '') {
+function toast(msg, cls='') {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className   = `toast show ${cls}`;
-  setTimeout(() => { el.className = 'toast'; }, 3000);
+  el.textContent = msg; el.className = `toast show ${cls}`;
+  setTimeout(() => { el.className='toast'; }, 3000);
 }
 
-/* ── EXPOSE ── */
-const App = {
-  goHome, goStep,
-  selectCountry, selectService,
-  getNumber, loadSMS, fetchNumbers,
-  copyOTP,
-};
+// Expose for HTML onclick attributes
+window.pickCountry = pickCountry;
+window.pickService = pickService;
+window.pickNum     = pickNum;
+window.loadNums    = loadNums;
+window.doRefresh   = doRefresh;
+window.doCopy      = doCopy;
+window.back1       = back1;
+window.back2       = back2;
+window.back3       = back3;
+window.resetAll    = back1;
