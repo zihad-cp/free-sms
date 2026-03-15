@@ -3,105 +3,314 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FreeSMS.live — Free Temporary Phone Numbers</title>
-  <meta name="description" content="Free temporary phone numbers to receive OTP online. Works with WhatsApp, Telegram, Google, Gmail, Facebook and 100+ services. No signup needed.">
+  <title>NexaSMS — Free Temporary Phone Numbers</title>
+  <meta name="description" content="Free virtual phone numbers from 25+ countries. Receive OTP for Telegram, Discord, TikTok, Tinder and 50+ platforms instantly.">
+  <meta name="theme-color" content="#080812">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- TOAST -->
-<div id="toast" class="toast"></div>
+<!-- BG -->
+<canvas id="bgc"></canvas>
+
+<!-- TOASTS -->
+<div id="toasts"></div>
+
+<!-- CONTEXT MENU -->
+<div id="ctxMenu" class="ctx">
+  <button class="ctx-item" id="ctx-copy">
+    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    Copy Number
+  </button>
+  <button class="ctx-item" id="ctx-inbox">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Open Inbox
+  </button>
+  <button class="ctx-item" id="ctx-ext">
+    <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View Source Site
+  </button>
+  <div class="ctx-sep"></div>
+  <button class="ctx-item ctx-danger" id="ctx-report">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Report Number
+  </button>
+</div>
+<div id="overlay" onclick="closeAll()"></div>
 
 <!-- NAV -->
 <nav>
-  <span class="logo" onclick="resetAll()">FreeSMS<span class="logo-dot">.live</span></span>
-  <div class="nav-right">
-    <a class="nav-gh" href="https://github.com/zihad-cp" target="_blank" rel="noopener">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-      </svg>
-      zihad-cp
+  <div class="nav-in">
+    <a class="logo" href="/" onclick="goHome();return false">
+      <div class="logo-hex">
+        <svg viewBox="0 0 28 28" fill="none">
+          <polygon points="14,2 25,8.5 25,19.5 14,26 3,19.5 3,8.5" stroke="currentColor" stroke-width="1.5" fill="rgba(99,102,241,0.15)"/>
+          <circle cx="14" cy="14" r="3.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <span class="logo-name">NexaSMS</span>
+      <span class="logo-free">FREE</span>
     </a>
-    <span class="live-badge"><span class="dot"></span>Live</span>
+    <nav class="nav-links">
+      <a class="nl active" href="#app">Numbers</a>
+      <a class="nl" href="#how">How it works</a>
+    </nav>
+    <div class="nav-end">
+      <div class="online-pill" id="onlinePill">
+        <span class="op-dot"></span>
+        <span id="onlineText">Loading...</span>
+      </div>
+      <a class="gh-btn" href="https://github.com/zihad-cp" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        zihad-cp
+      </a>
+    </div>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-tag"><span class="dot"></span>Free · No signup · Instant OTP</div>
-  <h1>Free Virtual<br><span class="grad">Phone Numbers</span></h1>
-  <p class="hero-sub">Real numbers from Indonesia, Thailand, Vietnam, Mexico & USA. Receive OTP for any platform — no SIM, no cost.</p>
+  <div class="hero-in">
+    <div class="hero-left">
+      <div class="hero-tag">
+        <span class="ht-dot"></span>
+        Free · No Signup · Instant OTP
+      </div>
+      <h1>Receive SMS<br><span class="hero-hl">Online Free</span></h1>
+      <p class="hero-p">Real phone numbers from <b>25+ countries</b>. Get verification codes for Telegram, Discord, TikTok & 50+ platforms instantly — no SIM card needed.</p>
+      <div class="hero-chips">
+        <span class="hchip">✈️ Telegram</span>
+        <span class="hchip">🎮 Discord</span>
+        <span class="hchip">🎵 TikTok</span>
+        <span class="hchip">🔥 Tinder</span>
+        <span class="hchip">🐦 Twitter</span>
+        <span class="hchip hchip-accent">+45 more</span>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-demo">
+        <div class="hd-top">
+          <span class="hd-dot hd-red"></span>
+          <span class="hd-dot hd-yellow"></span>
+          <span class="hd-dot hd-green"></span>
+          <span class="hd-title">NexaSMS Inbox</span>
+        </div>
+        <div class="hd-num">+1 (415) 855-8627</div>
+        <div class="hd-meta">🇺🇸 United States · Telegram</div>
+        <div class="hd-sms">
+          <div class="hd-sms-from">TELEGRAM</div>
+          <div class="hd-sms-body">Your Telegram verification code: 483921</div>
+        </div>
+        <div class="hd-otp">
+          <div class="hd-otp-label">OTP DETECTED</div>
+          <div class="hd-otp-nums">
+            <span>4</span><span>8</span><span>3</span><span>9</span><span>2</span><span>1</span>
+          </div>
+          <button class="hd-copy">Copy OTP</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="hero-stats">
-    <div class="hs"><div class="hs-n">75+</div><div class="hs-l">Numbers</div></div>
-    <div class="hs"><div class="hs-n">5</div><div class="hs-l">Countries</div></div>
-    <div class="hs"><div class="hs-n">16</div><div class="hs-l">Services</div></div>
-    <div class="hs"><div class="hs-n">100%</div><div class="hs-l">Free</div></div>
+    <div class="hs-item"><b class="hs-n" id="hsNums">300+</b><span class="hs-l">Numbers</span></div>
+    <div class="hs-sep"></div>
+    <div class="hs-item"><b class="hs-n">25</b><span class="hs-l">Countries</span></div>
+    <div class="hs-sep"></div>
+    <div class="hs-item"><b class="hs-n">50+</b><span class="hs-l">Services</span></div>
+    <div class="hs-sep"></div>
+    <div class="hs-item"><b class="hs-n">$0</b><span class="hs-l">Cost</span></div>
   </div>
 </section>
 
 <!-- AD -->
-<div class="ad-row">
-  <!-- Replace with Google AdSense -->
-  <div class="ad-box">📢 Advertisement</div>
+<div class="ad-zone"><div class="ad-inner">📢 Advertisement — Replace with Google AdSense code</div></div>
+
+<!-- ═══ APP ═══ -->
+<div class="app" id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <span class="sb-title">Countries</span>
+      <button class="sb-close" onclick="clearCSearch()">✕</button>
+    </div>
+    <div class="sb-search">
+      <svg class="sbs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="cInp" class="sbs-inp" type="text" placeholder="Search country..." autocomplete="off" spellcheck="false" oninput="filterC(this.value)">
+    </div>
+    <div class="sb-list" id="sbList"></div>
+  </aside>
+
+  <!-- CONTENT -->
+  <section class="content" id="content">
+
+    <!-- TOOLBAR -->
+    <div class="toolbar" id="toolbar">
+      <div class="tb-left" id="svcScroll">
+        <div class="svc-chips" id="svcChips"></div>
+      </div>
+      <div class="tb-right">
+        <button class="tb-btn" id="shuffleBtn" onclick="doShuffle()" title="Get new random numbers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+          Shuffle
+        </button>
+        <div class="view-btns">
+          <button class="vb active" id="vbList" onclick="setView('list')" title="List">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+          <button class="vb" id="vbGrid" onclick="setView('grid')" title="Grid">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BREADCRUMB -->
+    <div class="bc" id="bc" style="display:none">
+      <button class="bc-home" onclick="goHome()">← Home</button>
+      <span class="bc-arrow">›</span>
+      <span class="bc-c" id="bcC"></span>
+      <span class="bc-arrow bc-sa" id="bcSA" style="display:none">›</span>
+      <span class="bc-s" id="bcS" style="display:none"></span>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div class="home-view" id="homeView">
+      <div class="hv-icon">
+        <svg viewBox="0 0 80 80" fill="none">
+          <circle cx="40" cy="40" r="38" stroke="rgba(99,102,241,0.2)" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <circle cx="40" cy="40" r="28" stroke="rgba(99,102,241,0.15)" stroke-width="1"/>
+          <path d="M40 24v16l10 10" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="40" cy="40" r="5" fill="#6366f1" opacity="0.6"/>
+        </svg>
+      </div>
+      <h2>Pick a Country</h2>
+      <p>Select a country from the left sidebar to browse available phone numbers.</p>
+      <div class="hv-regions">
+        <div class="hvr" onclick="jumpRegion('Asia')">🌏 Asia</div>
+        <div class="hvr" onclick="jumpRegion('Americas')">🌎 Americas</div>
+        <div class="hvr" onclick="jumpRegion('Europe')">🌍 Europe</div>
+        <div class="hvr" onclick="jumpRegion('Oceania')">🌐 Oceania &amp; Africa</div>
+      </div>
+    </div>
+
+    <!-- NUMBERS VIEW -->
+    <div class="nums-view" id="numsView" style="display:none">
+      <div class="nv-head" id="nvHead">
+        <span class="nv-title" id="nvTitle">Numbers</span>
+        <span class="nv-badge" id="nvBadge"></span>
+      </div>
+      <div class="nums-list" id="numsList"></div>
+    </div>
+
+    <!-- INBOX VIEW -->
+    <div class="inbox-view" id="inboxView" style="display:none">
+      <div class="iv-head">
+        <button class="iv-back" onclick="closeInbox()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <div class="iv-info">
+          <div class="iv-num" id="ivNum"></div>
+          <div class="iv-meta" id="ivMeta"></div>
+        </div>
+        <div class="iv-acts">
+          <button class="iv-btn iv-btn-primary" onclick="copyActive()">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+          <button class="iv-btn" id="ivRefresh" onclick="triggerRefresh()">
+            <svg id="ivRefIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+          <button class="iv-btn iv-icon" onclick="openSrc()" title="Open source site">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Number Box -->
+      <div class="num-box">
+        <div>
+          <div class="nb-label">YOUR PHONE NUMBER</div>
+          <div class="nb-val" id="nbVal"></div>
+          <div class="nb-hint">Enter this number on your platform, then wait for SMS below</div>
+        </div>
+        <div class="nb-right">
+          <button class="copy-btn" id="copyBigBtn" onclick="copyActive()">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Number
+          </button>
+          <div class="nb-ar" id="nbAr">Auto-refresh every 15s</div>
+        </div>
+      </div>
+
+      <!-- SMS Area -->
+      <div class="sms-area">
+        <div class="sms-area-hd">
+          <div class="sah-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Inbox
+          </div>
+          <span class="sms-badge" id="smsBadge"></span>
+        </div>
+        <div id="smsCont"></div>
+      </div>
+    </div>
+
+  </section>
 </div>
 
-<!-- MAIN FLOW -->
-<main class="wrap">
-
-  <!-- STEP BAR -->
-  <div class="step-bar" id="stepBar">
-    <div class="st active" id="tab1" data-step="1">
-      <span class="st-n">01</span><span class="st-l">Country</span>
+<!-- HOW -->
+<section class="how" id="how">
+  <div class="how-in">
+    <p class="how-eyebrow">HOW IT WORKS</p>
+    <h2 class="how-title">Simple. Fast. Free.</h2>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="hc-num">01</div>
+        <div class="hc-ico">🌍</div>
+        <h3>Pick a country</h3>
+        <p>25 countries available. Every click loads fresh shuffled numbers so you always see something new.</p>
+      </div>
+      <div class="how-card">
+        <div class="hc-num">02</div>
+        <div class="hc-ico">📋</div>
+        <h3>Copy the number</h3>
+        <p>Click any number to open the inbox. Copy it and paste it on any platform that asks for phone verification.</p>
+      </div>
+      <div class="how-card">
+        <div class="hc-num">03</div>
+        <div class="hc-ico">⚡</div>
+        <h3>Get your OTP</h3>
+        <p>SMS arrives here automatically every 15 seconds. OTP code is detected and shown in large digits — click to copy.</p>
+      </div>
     </div>
-    <div class="st" id="tab2" data-step="2">
-      <span class="st-n">02</span><span class="st-l">Service</span>
-    </div>
-    <div class="st" id="tab3" data-step="3">
-      <span class="st-n">03</span><span class="st-l">Number</span>
-    </div>
-  </div>
-
-  <!-- STEP 1 -->
-  <div id="s1">
-    <p class="lbl">— দেশ বেছে নাও</p>
-    <div class="cgrid" id="cgrid"></div>
-  </div>
-
-  <!-- STEP 2 -->
-  <div id="s2" class="dn">
-    <button class="backbtn" onclick="toStep(1)">← Country বদলাও</button>
-    <p class="lbl" id="s2lbl">— service বেছে নাও</p>
-    <div class="sgrid" id="sgrid"></div>
-  </div>
-
-  <!-- STEP 3 -->
-  <div id="s3" class="dn">
-    <button class="backbtn" onclick="toStep(2)">← Service বদলাও</button>
-    <p class="lbl" id="s3lbl">— available numbers</p>
-    <div id="nlist"></div>
-  </div>
-
-  <!-- SMS PANEL -->
-  <div id="panel" class="dn"></div>
-
-</main>
-
-<!-- HOW TO -->
-<section class="wrap howto">
-  <h2 class="h2">কিভাবে ব্যবহার করবে</h2>
-  <div class="hgrid">
-    <div class="hcard"><div class="hn">01</div><h3>দেশ বেছে নাও</h3><p>৫টি দেশ থেকে যেকোনো একটি select করো।</p></div>
-    <div class="hcard"><div class="hn">02</div><h3>Service বেছে নাও</h3><p>Google, Gmail, WhatsApp সহ যেকোনো platform বেছে নাও।</p></div>
-    <div class="hcard"><div class="hn">03</div><h3>OTP নাও</h3><p>Number টা platform এ দাও। SMS এখানে দেখাবে। OTP copy করো।</p></div>
   </div>
 </section>
 
+<!-- AD BOTTOM -->
+<div class="ad-zone" style="margin-bottom:40px"><div class="ad-inner">📢 Advertisement</div></div>
+
 <!-- FOOTER -->
 <footer>
-  <p>Built by <a href="https://github.com/zihad-cp" target="_blank" rel="noopener">Zihad</a> · HSTU, Bangladesh</p>
-  <p style="margin-top:6px">© 2025 FreeSMS.live — Numbers are publicly shared. Do not use for illegal purposes.</p>
+  <div class="ft-in">
+    <div class="ft-brand">
+      <svg class="ft-hex" viewBox="0 0 24 24" fill="none"><polygon points="12,2 22,7 22,17 12,22 2,17 2,7" stroke="currentColor" stroke-width="1.5" fill="rgba(99,102,241,0.15)"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+      NexaSMS
+    </div>
+    <div class="ft-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="https://github.com/zihad-cp" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <div class="ft-copy">
+      © 2025 NexaSMS by <a href="https://github.com/zihad-cp" target="_blank" rel="noopener">Zihad</a> · HSTU, Bangladesh ·
+      Numbers are publicly shared. Do not use for illegal activities.
+    </div>
+  </div>
 </footer>
 
 <script src="app.js"></script>
