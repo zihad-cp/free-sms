@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreeSMS.live — Free Virtual Phone Numbers for OTP</title>
+  <meta name="description" content="Free temporary phone numbers to receive SMS online. Works with WhatsApp, Telegram, Google, Gmail, Facebook and 100+ services.">
+  <meta name="keywords" content="free sms, virtual number, otp, temporary phone number, receive sms online">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="App.goHome()" title="Home">FreeSMS.live</div>
+  <div class="nav-spacer"></div>
+  <div class="live-pill"><span class="dot"></span>Live</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero z1">
+  <div class="hero-pill"><span class="dot"></span>Free · No signup · Real numbers</div>
+  <h1>Free Virtual<br><span class="grad">Phone Numbers</span></h1>
+  <p>Receive OTP SMS online — no SIM needed. Works with WhatsApp, Telegram, Google, Gmail, Facebook and 100+ platforms. Always free.</p>
+  <div class="hero-stats">
+    <div class="hs"><div class="hs-n">75+</div><div class="hs-l">Numbers</div></div>
+    <div class="hs"><div class="hs-n">5</div><div class="hs-l">Countries</div></div>
+    <div class="hs"><div class="hs-n">18</div><div class="hs-l">Services</div></div>
+    <div class="hs"><div class="hs-n">Free</div><div class="hs-l">Always</div></div>
+  </div>
+</section>
+
+<!-- AD TOP -->
+<div class="ad-wrap">
+  <!-- Google AdSense: replace this div with your AdSense code -->
+  <div class="ad-box">📢 Advertisement — Google AdSense code এখানে বসাও</div>
+</div>
+
+<!-- MAIN FLOW -->
+<main class="flow">
+
+  <!-- Step bar -->
+  <div class="step-bar" id="stepBar">
+    <div class="step-tab" id="tab1" data-step="1">
+      <span class="tab-n">01</span>Country
+    </div>
+    <div class="step-tab" id="tab2" data-step="2">
+      <span class="tab-n">02</span>Service
+    </div>
+    <div class="step-tab" id="tab3" data-step="3">
+      <span class="tab-n">03</span>Get Number
+    </div>
+  </div>
+
+  <!-- STEP 1: Country -->
+  <div id="step1" class="hidden">
+    <p class="sec-lbl">— দেশ বেছে নাও</p>
+    <div class="country-grid" id="countryGrid"></div>
+  </div>
+
+  <!-- STEP 2: Service -->
+  <div id="step2" class="hidden">
+    <button class="back-btn" onclick="App.goStep(1)">← Country পরিবর্তন করো</button>
+    <p class="sec-lbl" id="step2Lbl">— কোন service এর জন্য number লাগবে?</p>
+    <div class="service-grid" id="serviceGrid"></div>
+  </div>
+
+  <!-- STEP 3: Numbers -->
+  <div id="step3" class="hidden">
+    <button class="back-btn" onclick="App.goStep(2)">← Service পরিবর্তন করো</button>
+    <p class="sec-lbl" id="step3Lbl">— Available numbers</p>
+    <div id="numList"></div>
+  </div>
+
+  <!-- SMS Panel -->
+  <div id="smsPanel" class="hidden"></div>
+
+</main>
+
+<!-- HOW TO -->
+<section class="howto">
+  <h2 class="section-ttl">কিভাবে ব্যবহার করবে</h2>
+  <div class="howto-grid">
+    <div class="howto-card">
+      <div class="howto-n">01</div>
+      <h3>দেশ বেছে নাও</h3>
+      <p>Indonesia, Thailand, Vietnam, Mexico বা USA — যে দেশের number দরকার সেটা select করো।</p>
+    </div>
+    <div class="howto-card">
+      <div class="howto-n">02</div>
+      <h3>Service বেছে নাও</h3>
+      <p>Google, Gmail, WhatsApp, Telegram, Facebook বা যেকোনো platform বেছে নাও।</p>
+    </div>
+    <div class="howto-card">
+      <div class="howto-n">03</div>
+      <h3>OTP পাও</h3>
+      <p>Number টা platform এ দাও। SMS এখানে দেখাবে। OTP আলাদা করে বড় করে দেখাবে — copy করো।</p>
+    </div>
+  </div>
+</section>
+
+<!-- AD BOTTOM -->
+<div class="ad-wrap" style="margin-bottom:44px">
+  <div class="ad-box">📢 Advertisement — Google AdSense</div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    <a href="#">Privacy Policy</a> &nbsp;·&nbsp;
+    <a href="#">Terms of Service</a> &nbsp;·&nbsp;
+    <a href="#">Contact</a>
+  </p>
+  <p style="margin-top:7px">© 2025 FreeSMS.live — Numbers are publicly shared. Do not use for illegal or fraudulent activities.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
