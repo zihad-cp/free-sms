@@ -15,7 +15,7 @@
 
 <!-- NAV -->
 <nav>
-  <div class="logo" onclick="App.goHome()" title="Home">FreeSMS.live</div>
+  <div class="logo" onclick="goBack1()" title="Home">FreeSMS.live</div>
   <div class="nav-spacer"></div>
   <a class="nav-gh" href="https://github.com/zihad-cp" target="_blank" rel="noopener">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -58,13 +58,13 @@
   </div>
 
   <div id="step2" class="hidden">
-    <button class="back-btn" onclick="App.goStep(1)">← Country পরিবর্তন করো</button>
+    <button class="back-btn" onclick="goBack1()">← Country পরিবর্তন করো</button>
     <p class="sec-lbl" id="step2Lbl">— কোন service এর জন্য number লাগবে?</p>
     <div class="service-grid" id="serviceGrid"></div>
   </div>
 
   <div id="step3" class="hidden">
-    <button class="back-btn" onclick="App.goStep(2)">← Service পরিবর্তন করো</button>
+    <button class="back-btn" onclick="goBack2()">← Service পরিবর্তন করো</button>
     <p class="sec-lbl" id="step3Lbl">— Available numbers</p>
     <div id="numList"></div>
   </div>
