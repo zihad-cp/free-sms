@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreeSMS.live — Free Virtual Phone Numbers for OTP</title>
   <meta name="description" content="Free temporary phone numbers to receive SMS online. Works with WhatsApp, Telegram, Google, Gmail, Facebook and 100+ services.">
-  <meta name="keywords" content="free sms, virtual number, otp, temporary phone number, receive sms online">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -18,6 +17,12 @@
 <nav>
   <div class="logo" onclick="App.goHome()" title="Home">FreeSMS.live</div>
   <div class="nav-spacer"></div>
+  <a class="nav-gh" href="https://github.com/zihad-cp" target="_blank" rel="noopener">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+    </svg>
+    zihad-cp
+  </a>
   <div class="live-pill"><span class="dot"></span>Live</div>
 </nav>
 
@@ -36,49 +41,35 @@
 
 <!-- AD TOP -->
 <div class="ad-wrap">
-  <!-- Google AdSense: replace this div with your AdSense code -->
-  <div class="ad-box">📢 Advertisement — Google AdSense code এখানে বসাও</div>
+  <div class="ad-box">📢 Advertisement — Google AdSense</div>
 </div>
 
 <!-- MAIN FLOW -->
 <main class="flow">
-
-  <!-- Step bar -->
   <div class="step-bar" id="stepBar">
-    <div class="step-tab" id="tab1" data-step="1">
-      <span class="tab-n">01</span>Country
-    </div>
-    <div class="step-tab" id="tab2" data-step="2">
-      <span class="tab-n">02</span>Service
-    </div>
-    <div class="step-tab" id="tab3" data-step="3">
-      <span class="tab-n">03</span>Get Number
-    </div>
+    <div class="step-tab" id="tab1" data-step="1"><span class="tab-n">01</span>Country</div>
+    <div class="step-tab" id="tab2" data-step="2"><span class="tab-n">02</span>Service</div>
+    <div class="step-tab" id="tab3" data-step="3"><span class="tab-n">03</span>Get Number</div>
   </div>
 
-  <!-- STEP 1: Country -->
   <div id="step1" class="hidden">
     <p class="sec-lbl">— দেশ বেছে নাও</p>
     <div class="country-grid" id="countryGrid"></div>
   </div>
 
-  <!-- STEP 2: Service -->
   <div id="step2" class="hidden">
     <button class="back-btn" onclick="App.goStep(1)">← Country পরিবর্তন করো</button>
     <p class="sec-lbl" id="step2Lbl">— কোন service এর জন্য number লাগবে?</p>
     <div class="service-grid" id="serviceGrid"></div>
   </div>
 
-  <!-- STEP 3: Numbers -->
   <div id="step3" class="hidden">
     <button class="back-btn" onclick="App.goStep(2)">← Service পরিবর্তন করো</button>
     <p class="sec-lbl" id="step3Lbl">— Available numbers</p>
     <div id="numList"></div>
   </div>
 
-  <!-- SMS Panel -->
   <div id="smsPanel" class="hidden"></div>
-
 </main>
 
 <!-- HOW TO -->
@@ -93,12 +84,30 @@
     <div class="howto-card">
       <div class="howto-n">02</div>
       <h3>Service বেছে নাও</h3>
-      <p>Google, Gmail, WhatsApp, Telegram, Facebook বা যেকোনো platform বেছে নাও।</p>
+      <p>Google, Gmail, WhatsApp, Telegram, Facebook বা যেকোনো platform বেছে নাও। Edu email এর জন্য Gmail select করো।</p>
     </div>
     <div class="howto-card">
       <div class="howto-n">03</div>
       <h3>OTP পাও</h3>
       <p>Number টা platform এ দাও। SMS এখানে দেখাবে। OTP আলাদা করে বড় করে দেখাবে — copy করো।</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROFILE SECTION -->
+<section class="profile-section">
+  <div class="profile-card">
+    <div class="profile-avatar">Z</div>
+    <div class="profile-info">
+      <div class="profile-name">Zihad</div>
+      <div class="profile-role">Developer · HSTU, Bangladesh</div>
+      <div class="profile-links">
+        <a href="https://github.com/zihad-cp" target="_blank" rel="noopener" class="profile-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          github.com/zihad-cp
+        </a>
+        <a href="https://zihadzzz.github.io/first-infinity/" target="_blank" rel="noopener" class="profile-link">🚀 First Infinity App</a>
+      </div>
     </div>
   </div>
 </section>
@@ -113,9 +122,12 @@
   <p>
     <a href="#">Privacy Policy</a> &nbsp;·&nbsp;
     <a href="#">Terms of Service</a> &nbsp;·&nbsp;
-    <a href="#">Contact</a>
+    <a href="https://github.com/zihad-cp" target="_blank" rel="noopener">GitHub</a>
   </p>
-  <p style="margin-top:7px">© 2025 FreeSMS.live — Numbers are publicly shared. Do not use for illegal or fraudulent activities.</p>
+  <p style="margin-top:7px">
+    © 2025 FreeSMS.live by <a href="https://github.com/zihad-cp" target="_blank" rel="noopener">Zihad</a>
+    — Numbers are publicly shared. Do not use for illegal activities.
+  </p>
 </footer>
 
 <script src="app.js"></script>
