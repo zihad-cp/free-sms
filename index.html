@@ -25,10 +25,14 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     Open Inbox
   </button>
+  <button class="ctx-item" id="ctxNext">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+    Try Next Number
+  </button>
   <div class="ctx-sep"></div>
   <button class="ctx-item ctx-red" id="ctxReport">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    Report
+    Report Number
   </button>
 </div>
 
@@ -46,6 +50,7 @@
     <nav class="topnav">
       <a class="tn" href="#app">Numbers</a>
       <a class="tn" href="#how">How it works</a>
+      <a class="tn" href="#compat">Compatibility</a>
     </nav>
     <div class="nav-end">
       <div class="online-badge" id="onlineBadge">
@@ -66,11 +71,16 @@
     <div class="hero-l">
       <div class="hero-eye"><span class="he-dot"></span>Free · No Signup · Instant OTP</div>
       <h1>Receive SMS<br><span class="hl">Online Free</span></h1>
-      <p>Real phone numbers from <b>25+ countries</b>. Get OTP for Telegram, Discord, TikTok & 50+ platforms — no SIM card needed.</p>
+      <p>Real phone numbers from <b>25+ countries</b>. Get OTP for Telegram, Discord, TikTok & 50+ platforms instantly.</p>
       <div class="hero-tags">
-        <span>✈️ Telegram</span><span>🎮 Discord</span><span>🎵 TikTok</span>
-        <span>🔥 Tinder</span><span>🐦 Twitter</span><span class="ht-a">+45 more</span>
+        <span class="ht-works">✈️ Telegram</span>
+        <span class="ht-works">🎮 Discord</span>
+        <span class="ht-works">🔥 Tinder</span>
+        <span class="ht-works">🐦 Twitter</span>
+        <span class="ht-partial">🎵 TikTok*</span>
+        <span class="ht-more">+45 more</span>
       </div>
+      <p class="hero-note">* TikTok/WhatsApp/Google may block heavily-used numbers. Try multiple numbers if one fails.</p>
     </div>
     <div class="hero-r">
       <div class="demo-card">
@@ -96,8 +106,48 @@
   </div>
 </div>
 
-<!-- AD TOP -->
+<!-- AD -->
 <div class="adz"><div class="ad-in">📢 Advertisement — Google AdSense</div></div>
+
+<!-- COMPATIBILITY SECTION -->
+<section class="compat" id="compat">
+  <div class="compat-in">
+    <div class="compat-head">
+      <p class="compat-eye">PLATFORM COMPATIBILITY</p>
+      <h2>What works with free numbers?</h2>
+      <p class="compat-sub">Public shared numbers work great for most platforms. Some platforms like TikTok, WhatsApp, and Google detect heavily-used numbers and block them — this is not fixable with free numbers.</p>
+    </div>
+    <div class="compat-grid">
+      <div class="cg-col cg-works">
+        <div class="cg-hd"><span class="cg-dot cg-green"></span>Works Well</div>
+        <div class="cg-list">
+          <span>✈️ Telegram</span><span>🎮 Discord</span><span>🔥 Tinder</span>
+          <span>🐦 Twitter/X</span><span>👻 Snapchat</span><span>🚗 Uber</span>
+          <span>📦 Amazon</span><span>💼 LinkedIn</span><span>🪙 Binance</span>
+          <span>💎 Crypto.com</span><span>📊 Bybit</span><span>🛒 Shopee</span>
+          <span>🛵 Grab</span><span>💳 PayPal</span><span>🎬 Netflix</span>
+        </div>
+      </div>
+      <div class="cg-col cg-partial">
+        <div class="cg-hd"><span class="cg-dot cg-yellow"></span>Sometimes Works</div>
+        <div class="cg-list">
+          <span>🎵 TikTok</span><span>🏠 Airbnb</span><span>🪟 Microsoft</span>
+          <span>🎧 Spotify</span><span>🟣 Twitch</span><span>🤖 Reddit</span>
+          <span>💘 Hinge</span><span>🐝 Bumble</span><span>🚕 Lyft</span>
+        </div>
+        <p class="cg-note">Try 2–3 different numbers if the first one fails. Numbers get blocked after heavy use.</p>
+      </div>
+      <div class="cg-col cg-blocked">
+        <div class="cg-hd"><span class="cg-dot cg-red"></span>Usually Blocked</div>
+        <div class="cg-list">
+          <span>📱 WhatsApp</span><span>🔵 Facebook</span><span>🔴 Google</span>
+          <span>📘 Instagram</span>
+        </div>
+        <p class="cg-note">These platforms actively block all publicly-known virtual numbers. You need a real SIM or paid service for these.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- APP -->
 <div class="app" id="app">
@@ -129,10 +179,10 @@
           Shuffle
         </button>
         <div class="vbtns">
-          <button class="vb on" id="vbL" onclick="App.setView('list')" title="List">
+          <button class="vb on" id="vbL" onclick="App.setView('list')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
-          <button class="vb" id="vbG" onclick="App.setView('grid')" title="Grid">
+          <button class="vb" id="vbG" onclick="App.setView('grid')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           </button>
         </div>
@@ -142,12 +192,12 @@
     <!-- BREADCRUMB -->
     <div class="bc" id="bc" style="display:none">
       <button onclick="App.goHome()">← Home</button>
-      <span>›</span><span id="bcC"></span>
-      <span id="bcSep" style="display:none">›</span>
-      <span id="bcS" style="display:none"></span>
+      <span class="bca">›</span><span class="bcc" id="bcC"></span>
+      <span class="bca bcsep" id="bcSep" style="display:none">›</span>
+      <span class="bcs" id="bcS" style="display:none"></span>
     </div>
 
-    <!-- HOME -->
+    <!-- HOME VIEW -->
     <div class="home" id="homeView">
       <div class="home-ico">
         <svg viewBox="0 0 80 80" fill="none">
@@ -166,7 +216,7 @@
       </div>
     </div>
 
-    <!-- NUMBERS -->
+    <!-- NUMBERS VIEW -->
     <div class="nums-view" id="numsView" style="display:none">
       <div class="nv-hd">
         <span class="nv-ttl" id="nvTtl">Numbers</span>
@@ -176,7 +226,7 @@
       <div id="numsList"></div>
     </div>
 
-    <!-- INBOX -->
+    <!-- INBOX VIEW -->
     <div class="inbox" id="inboxView" style="display:none">
       <div class="ib-hd">
         <button class="ib-back" onclick="App.closeInbox()">
@@ -196,16 +246,24 @@
             <svg id="ibRefIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             Refresh
           </button>
+          <button class="ib-btn" onclick="App.nextNumber()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+            Next
+          </button>
         </div>
       </div>
 
+      <!-- Service warning banner -->
+      <div class="svc-warn" id="svcWarn" style="display:none"></div>
+
+      <!-- Number Box -->
       <div class="num-box">
         <div>
           <div class="nb-lbl">PHONE NUMBER</div>
           <div class="nb-val" id="nbVal"></div>
-          <div class="nb-hint">Enter this number on your platform, then click Refresh</div>
+          <div class="nb-hint">Paste this number on your platform, then wait here for the OTP</div>
         </div>
-        <div>
+        <div class="nb-right">
           <button class="copy-big" id="copyBig" onclick="App.copyActive()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copy Number
@@ -214,6 +272,7 @@
         </div>
       </div>
 
+      <!-- SMS Section -->
       <div class="sms-sec">
         <div class="sms-sec-hd">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -227,15 +286,27 @@
   </main>
 </div>
 
-<!-- HOW -->
+<!-- HOW IT WORKS -->
 <section class="how" id="how">
   <div class="how-in">
     <p class="how-eye">HOW IT WORKS</p>
-    <h2>Simple. Fast. Free.</h2>
+    <h2>Three steps, zero cost</h2>
     <div class="how-grid">
-      <div class="how-card"><div class="hc-n">01</div><div class="hc-i">🌍</div><h3>Pick a country</h3><p>25 countries. Numbers are shuffled every click — always different.</p></div>
-      <div class="how-card"><div class="hc-n">02</div><div class="hc-i">📋</div><h3>Copy the number</h3><p>Click any number to open the inbox. Copy and paste it on your platform.</p></div>
-      <div class="how-card"><div class="hc-n">03</div><div class="hc-i">⚡</div><h3>Get your OTP</h3><p>SMS appears automatically. OTP is detected and shown in large digits.</p></div>
+      <div class="how-card">
+        <div class="hc-n">01</div><div class="hc-i">🌍</div>
+        <h3>Pick a country</h3>
+        <p>25 countries available. Numbers are shuffled every click — always different. Instant local load.</p>
+      </div>
+      <div class="how-card">
+        <div class="hc-n">02</div><div class="hc-i">📋</div>
+        <h3>Copy & paste</h3>
+        <p>Click any number to open the inbox. Copy it. If you see "Maximum attempts" — click Next to try a different number.</p>
+      </div>
+      <div class="how-card">
+        <div class="hc-n">03</div><div class="hc-i">⚡</div>
+        <h3>Receive OTP</h3>
+        <p>SMS arrives automatically. OTP is detected and highlighted in large digits. One click to copy it.</p>
+      </div>
     </div>
   </div>
 </section>
