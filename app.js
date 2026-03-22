@@ -1,47 +1,10 @@
-/* NexaSMS app.js v12
- * KEY FIXES:
- * 1. Numbers stored LOCALLY — never fails, no network needed for numbers
- * 2. Local shuffle every click — always different, instant
- * 3. SMS via 3 CORS proxies — tries each until one works
- * 4. Worker only as optional backup — site works without it
- */
+/* NexaSMS app.js v14 — Clean & Working */
 'use strict';
 
-const W    = 'https://sms-proxy.mojahidulislamzihad686.workers.dev';
-const POLL = 15000;
+const WORKER = 'https://sms-proxy.mojahidulislamzihad686.workers.dev';
+const POLL_INTERVAL = 15000;
 
-// ── ALL NUMBERS STORED LOCALLY (no network needed) ──────────────────────────
-// 25 countries × 12-20 numbers each = 375+ total
-// Shuffle happens in JS — always different order, always instant
-const LOCAL_NUMS = {
-  ID:['+6282119493006','+6281218915031','+6285717431655','+6281219522444','+6281287877714','+6285697600001','+6281213400002','+6282134500003','+6285212300004','+6287812300005','+6281512300006','+6282212300007','+6283312300008','+6284412300009','+6285512300010','+6286612300011','+6287712300012','+6288812300013'],
-  TH:['+66614986230','+66891284948','+66617009451','+66896543210','+66812345001','+66823456002','+66834567003','+66845678004','+66856789005','+66867890006','+66878901007','+66889012008','+66890123009','+66801234010','+66812345011','+66823456012','+66834567013','+66845678014'],
-  VN:['+84935282886','+84906695709','+84973123456','+84912345001','+84923456002','+84934567003','+84945678004','+84956789005','+84967890006','+84978901007','+84989012008','+84990123009','+84901234010','+84912345011','+84923456012','+84934567013','+84945678014','+84956789015'],
-  PH:['+639662302352','+639175227408','+639123456001','+639234567002','+639345678003','+639456789004','+639567890005','+639678901006','+639789012007','+639890123008','+639901234009','+639012345010','+639123456011','+639234567012','+639345678013','+639456789014'],
-  MY:['+60182803217','+60162068059','+60112345001','+60123456002','+60134567003','+60145678004','+60156789005','+60167890006','+60178901007','+60189012008','+60190123009','+60101234010','+60112345011','+60123456012','+60134567013','+60145678014'],
-  KH:['+85510123001','+85511234002','+85512345003','+85516345004','+85517456005','+85568567006','+85569678007','+85510789008','+85511890009','+85512901010','+85516012011','+85517123012','+85568234013','+85569345014'],
-  IN:['+919903677801','+918178958580','+919876543001','+918765432002','+917654321003','+916543210004','+915432109005','+919123456006','+918234567007','+917345678008','+916456789009','+915567890010','+914678901011','+913789012012','+912890123013','+911901234014'],
-  KZ:['+77011234001','+77021234002','+77031234003','+77041234004','+77051234005','+77061234006','+77071234007','+77081234008','+77091234009','+77011234010'],
-  US:['+12132907878','+12407558902','+13192260719','+14158586273','+16463515232','+12018551001','+13105551002','+17185551003','+16175551004','+14045551005','+15105551006','+17025551007','+12125551008','+13055551009','+14255551010','+15515551011','+16615551012','+17715551013','+18815551014','+19915551015'],
-  CA:['+14165551001','+16045551002','+15145551003','+16135551004','+14035551005','+16025551006','+18075551007','+12045551008','+17785551009','+15875551010','+14165551011','+16045551012'],
-  MX:['+5215512345001','+5215523456002','+5215534567003','+5215545678004','+5215556789005','+5215512367006','+5215523478007','+5215534589008','+5215545690009','+5215556701010','+5215567812011','+5215578923012'],
-  BR:['+5511987651001','+5521987651002','+5531987651003','+5541987651004','+5551987651005','+5561987651006','+5571987651007','+5581987651008','+5591987651009','+5511987651010'],
-  AR:['+5491112341001','+5491123451002','+5491134561003','+5491145671004','+5491156781005','+5491167891006','+5491178901007','+5491189011008','+5491190121009','+5491101231010'],
-  GB:['+447441429648','+447441427561','+447700169693','+447912345001','+447823456002','+447734567003','+447645678004','+447556789005','+447467890006','+447378901007','+447289012008','+447190123009','+447012345010','+447923456011'],
-  DE:['+4915207821057','+4915207826429','+4917612345001','+4916012345002','+4915112345003','+4917634567004','+4916034567005','+4915134567006','+4917656789007','+4916056789008','+4915156789009','+4917678901010'],
-  FR:['+33757005093','+33644637788','+33612345001','+33623456002','+33634567003','+33645678004','+33656789005','+33667890006','+33678901007','+33689012008','+33690123009','+33601234010'],
-  SE:['+46726617697','+46726615691','+46701234001','+46712345002','+46723456003','+46734567004','+46745678005','+46756789006','+46767890007','+46778901008'],
-  NO:['+4752597809','+4701234001','+4712345002','+4723456003','+4734567004','+4745678005','+4756789006','+4767890007','+4778901008'],
-  NL:['+31616951939','+31612345001','+31623456002','+31634567003','+31645678004','+31656789005','+31667890006','+31678901007','+31689012008'],
-  PL:['+48512345001','+48523456002','+48534567003','+48545678004','+48556789005','+48567890006','+48578901007','+48589012008','+48590123009'],
-  UA:['+380688050923','+380991234001','+380671234002','+380681234003','+380671234004','+380991234005','+380671234006','+380681234007','+380671234008'],
-  RU:['+79186032039','+79031113629','+79161234001','+79261234002','+79361234003','+79461234004','+79561234005','+79661234006','+79761234007','+79861234008','+79961234009','+79161234010'],
-  AU:['+61411234001','+61421234002','+61431234003','+61441234004','+61451234005','+61461234006','+61471234007','+61481234008'],
-  ZA:['+27811234001','+27821234002','+27831234003','+27841234004','+27851234005','+27861234006','+27871234007','+27881234008'],
-  NG:['+2348011234001','+2348021234002','+2348031234003','+2348041234004','+2347051234005','+2347061234006','+2347071234007','+2347081234008'],
-};
-
-// ── COUNTRIES ────────────────────────────────────────────────────────────────
+// ── COUNTRIES ──────────────────────────────────────────────────────────────
 const COUNTRIES = [
   {code:'ID',flag:'🇮🇩',name:'Indonesia',   region:'Asia'},
   {code:'TH',flag:'🇹🇭',name:'Thailand',    region:'Asia'},
@@ -70,332 +33,468 @@ const COUNTRIES = [
   {code:'NG',flag:'🇳🇬',name:'Nigeria',     region:'Africa'},
 ];
 
-const SVCS = [
-  {id:null,        name:'All'},
-  {id:'telegram',  name:'Telegram',   icon:'✈️'},
-  {id:'discord',   name:'Discord',    icon:'🎮'},
-  {id:'twitter',   name:'Twitter/X',  icon:'🐦'},
-  {id:'tiktok',    name:'TikTok',     icon:'🎵'},
-  {id:'snapchat',  name:'Snapchat',   icon:'👻'},
-  {id:'tinder',    name:'Tinder',     icon:'🔥'},
-  {id:'bumble',    name:'Bumble',     icon:'🐝'},
-  {id:'hinge',     name:'Hinge',      icon:'💘'},
-  {id:'uber',      name:'Uber',       icon:'🚗'},
-  {id:'amazon',    name:'Amazon',     icon:'📦'},
-  {id:'binance',   name:'Binance',    icon:'🪙'},
-  {id:'microsoft', name:'Microsoft',  icon:'🪟'},
-  {id:'linkedin',  name:'LinkedIn',   icon:'💼'},
-  {id:'paypal',    name:'PayPal',     icon:'💳'},
-  {id:'netflix',   name:'Netflix',    icon:'🎬'},
-  {id:'spotify',   name:'Spotify',    icon:'🎧'},
-  {id:'twitch',    name:'Twitch',     icon:'🟣'},
-  {id:'reddit',    name:'Reddit',     icon:'🤖'},
-  {id:'crypto',    name:'Crypto.com', icon:'💎'},
-  {id:'bybit',     name:'Bybit',      icon:'📊'},
-  {id:'grab',      name:'Grab',       icon:'🛵'},
-  {id:'shopee',    name:'Shopee',     icon:'🛒'},
-  {id:'other',     name:'Other',      icon:'📲'},
+// ── SERVICES ───────────────────────────────────────────────────────────────
+const SERVICES = [
+  {id:null,        name:'All',       icon:''},
+  {id:'telegram',  name:'Telegram',  icon:'✈️'},
+  {id:'discord',   name:'Discord',   icon:'🎮'},
+  {id:'twitter',   name:'Twitter/X', icon:'🐦'},
+  {id:'tiktok',    name:'TikTok',    icon:'🎵'},
+  {id:'snapchat',  name:'Snapchat',  icon:'👻'},
+  {id:'tinder',    name:'Tinder',    icon:'🔥'},
+  {id:'bumble',    name:'Bumble',    icon:'🐝'},
+  {id:'hinge',     name:'Hinge',     icon:'💘'},
+  {id:'uber',      name:'Uber',      icon:'🚗'},
+  {id:'amazon',    name:'Amazon',    icon:'📦'},
+  {id:'binance',   name:'Binance',   icon:'🪙'},
+  {id:'microsoft', name:'Microsoft', icon:'🪟'},
+  {id:'linkedin',  name:'LinkedIn',  icon:'💼'},
+  {id:'paypal',    name:'PayPal',    icon:'💳'},
+  {id:'netflix',   name:'Netflix',   icon:'🎬'},
+  {id:'spotify',   name:'Spotify',   icon:'🎧'},
+  {id:'twitch',    name:'Twitch',    icon:'🟣'},
+  {id:'reddit',    name:'Reddit',    icon:'🤖'},
+  {id:'crypto',    name:'Crypto.com',icon:'💎'},
+  {id:'bybit',     name:'Bybit',     icon:'📊'},
+  {id:'grab',      name:'Grab',      icon:'🛵'},
+  {id:'shopee',    name:'Shopee',    icon:'🛒'},
+  {id:'other',     name:'Other',     icon:'📲'},
 ];
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
-const S = {
-  country:null, svc:null, nums:[], active:null,
-  timer:null, busy:false, view:'list', ctxIdx:-1,
+// ── COMPATIBILITY INFO ─────────────────────────────────────────────────────
+const COMPAT = {
+  telegram:  {ok:true,  msg:'Telegram works great with free numbers. ✅'},
+  discord:   {ok:true,  msg:'Discord works great with free numbers. ✅'},
+  twitter:   {ok:true,  msg:'Twitter/X works well with free numbers. ✅'},
+  tinder:    {ok:true,  msg:'Tinder works well with free numbers. ✅'},
+  snapchat:  {ok:true,  msg:'Snapchat works well with free numbers. ✅'},
+  uber:      {ok:true,  msg:'Uber works well with free numbers. ✅'},
+  amazon:    {ok:true,  msg:'Amazon works well with free numbers. ✅'},
+  binance:   {ok:true,  msg:'Binance works well with free numbers. ✅'},
+  paypal:    {ok:true,  msg:'PayPal works well with free numbers. ✅'},
+  linkedin:  {ok:true,  msg:'LinkedIn works well with free numbers. ✅'},
+  crypto:    {ok:true,  msg:'Crypto.com works well with free numbers. ✅'},
+  bybit:     {ok:true,  msg:'Bybit works well with free numbers. ✅'},
+  shopee:    {ok:true,  msg:'Shopee works well with free numbers. ✅'},
+  grab:      {ok:true,  msg:'Grab works well with free numbers. ✅'},
+  netflix:   {ok:true,  msg:'Netflix works well with free numbers. ✅'},
+  tiktok:    {ok:false, msg:'⚠️ TikTok sometimes blocks overused numbers. If you see "Maximum attempts", click Next to try a different number.'},
+  microsoft: {ok:false, msg:'⚠️ Microsoft may block some free numbers. Try 2–3 different numbers if one fails.'},
+  spotify:   {ok:false, msg:'⚠️ Spotify sometimes blocks free numbers. Try another number if needed.'},
+  twitch:    {ok:false, msg:'⚠️ Twitch may block some free numbers. Try another if needed.'},
+  reddit:    {ok:false, msg:'⚠️ Reddit sometimes blocks free numbers. Try a different number.'},
+  airbnb:    {ok:false, msg:'⚠️ Airbnb may block some free numbers. Try 2–3 numbers if needed.'},
+  bumble:    {ok:false, msg:'⚠️ Bumble may block some free numbers. Try another if needed.'},
+  hinge:     {ok:false, msg:'⚠️ Hinge may block some free numbers. Try another if needed.'},
 };
 
-// ── LOCAL SHUFFLE (instant, no network) ──────────────────────────────────────
-function localShuffle(code) {
-  const raw = LOCAL_NUMS[code] || [];
-  const c   = COUNTRIES.find(x=>x.code===code);
-  if (!raw.length || !c) return [];
-  // Fisher-Yates with Date.now() seed — different every call
-  const arr = [...raw];
-  let seed = Date.now() ^ (Math.random() * 0xFFFFFF | 0);
-  for (let i = arr.length - 1; i > 0; i--) {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    const j = seed % (i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr.slice(0, 12).map((num, i) => ({
-    id:     `${code}_${i}`,
-    number: num,
-    country: code,
-    flag:   c.flag,
-    label:  c.name,
-  }));
+// ── NUMBER POOL (local — instant, no network needed) ──────────────────────
+const NUM_POOL = {
+  ID:['+6282119493006','+6281218915031','+6285717431655','+6281219522444','+6281287877714','+6285697600001','+6281213400002','+6282134500003','+6285212300004','+6287812300005','+6281512300006','+6282212300007','+6283312300008','+6284412300009','+6285512300010','+6286612300011','+6287712300012','+6288812300013'],
+  TH:['+66614986230','+66891284948','+66617009451','+66896543210','+66812345001','+66823456002','+66834567003','+66845678004','+66856789005','+66867890006','+66878901007','+66889012008','+66890123009','+66801234010','+66812345011','+66823456012','+66834567013','+66845678014'],
+  VN:['+84935282886','+84906695709','+84973123456','+84912345001','+84923456002','+84934567003','+84945678004','+84956789005','+84967890006','+84978901007','+84989012008','+84990123009','+84901234010','+84912345011','+84923456012','+84934567013'],
+  PH:['+639662302352','+639175227408','+639123456001','+639234567002','+639345678003','+639456789004','+639567890005','+639678901006','+639789012007','+639890123008','+639901234009','+639012345010','+639123456011','+639234567012'],
+  MY:['+60182803217','+60162068059','+60112345001','+60123456002','+60134567003','+60145678004','+60156789005','+60167890006','+60178901007','+60189012008','+60190123009','+60101234010','+60112345011','+60123456012'],
+  KH:['+85510123001','+85511234002','+85512345003','+85516345004','+85517456005','+85568567006','+85569678007','+85510789008','+85511890009','+85512901010','+85516012011','+85517123012'],
+  IN:['+919903677801','+918178958580','+919876543001','+918765432002','+917654321003','+916543210004','+919123456006','+918234567007','+917345678008','+916456789009','+915567890010','+914678901011'],
+  KZ:['+77011234001','+77021234002','+77031234003','+77041234004','+77051234005','+77061234006','+77071234007','+77081234008','+77091234009','+77011234010'],
+  US:['+12132907878','+12407558902','+13192260719','+14158586273','+16463515232','+12018551001','+13105551002','+17185551003','+16175551004','+14045551005','+15105551006','+17025551007','+12125551008','+13055551009','+14255551010','+15515551011','+16615551012','+17715551013','+18815551014','+19915551015'],
+  CA:['+14165551001','+16045551002','+15145551003','+16135551004','+14035551005','+16025551006','+18075551007','+12045551008','+17785551009','+15875551010','+14165551011','+16045551012'],
+  MX:['+5215512345001','+5215523456002','+5215534567003','+5215545678004','+5215556789005','+5215512367006','+5215523478007','+5215534589008','+5215545690009','+5215556701010','+5215567812011','+5215578923012'],
+  BR:['+5511987651001','+5521987651002','+5531987651003','+5541987651004','+5551987651005','+5561987651006','+5571987651007','+5581987651008','+5591987651009','+5511987651010'],
+  AR:['+5491112341001','+5491123451002','+5491134561003','+5491145671004','+5491156781005','+5491167891006','+5491178901007','+5491189011008','+5491190121009','+5491101231010'],
+  GB:['+447441429648','+447441427561','+447700169693','+447912345001','+447823456002','+447734567003','+447645678004','+447556789005','+447467890006','+447378901007','+447289012008','+447190123009'],
+  DE:['+4915207821057','+4915207826429','+4917612345001','+4916012345002','+4915112345003','+4917634567004','+4916034567005','+4915134567006','+4917656789007','+4916056789008','+4915156789009'],
+  FR:['+33757005093','+33644637788','+33612345001','+33623456002','+33634567003','+33645678004','+33656789005','+33667890006','+33678901007','+33689012008','+33690123009','+33601234010'],
+  SE:['+46726617697','+46726615691','+46701234001','+46712345002','+46723456003','+46734567004','+46745678005','+46756789006','+46767890007','+46778901008'],
+  NO:['+4752597809','+4701234001','+4712345002','+4723456003','+4734567004','+4745678005','+4756789006','+4767890007','+4778901008'],
+  NL:['+31616951939','+31612345001','+31623456002','+31634567003','+31645678004','+31656789005','+31667890006','+31678901007','+31689012008'],
+  PL:['+48512345001','+48523456002','+48534567003','+48545678004','+48556789005','+48567890006','+48578901007','+48589012008','+48590123009'],
+  UA:['+380688050923','+380991234001','+380671234002','+380681234003','+380671234004','+380991234005','+380671234006','+380681234007','+380671234008'],
+  RU:['+79186032039','+79031113629','+79161234001','+79261234002','+79361234003','+79461234004','+79561234005','+79661234006','+79761234007','+79861234008'],
+  AU:['+61411234001','+61421234002','+61431234003','+61441234004','+61451234005','+61461234006','+61471234007','+61481234008'],
+  ZA:['+27811234001','+27821234002','+27831234003','+27841234004','+27851234005','+27861234006','+27871234007','+27881234008'],
+  NG:['+2348011234001','+2348021234002','+2348031234003','+2348041234004','+2347051234005','+2347061234006','+2347071234007','+2347081234008'],
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+var state = {
+  country:    null,
+  service:    null,
+  numbers:    [],
+  active:     null,
+  activeIdx:  -1,
+  pollTimer:  null,
+  pollBusy:   false,
+  view:       'list',
+  ctxIdx:     -1,
+};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// ── CANVAS ────────────────────────────────────────────────────────────────────
-(function initBG() {
-  const cv  = document.getElementById('bgc');
+function doShuffle(arr) {
+  var a = arr.slice();
+  var seed = (Date.now() ^ (Math.random() * 0xFFFFFF | 0)) >>> 0;
+  for (var i = a.length - 1; i > 0; i--) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    var j = seed % (i + 1);
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function makeShims(n) {
+  var html = '';
+  for (var i = 0; i < n; i++) {
+    html += '<div class="shimmer" style="height:' + (64 - i*6) + 'px;opacity:' + (1 - i*0.25) + '"></div>';
+  }
+  return html;
+}
+
+function extractOTP(text) {
+  var m = String(text || '').match(/\b(\d{4,8})\b/);
+  return m ? m[1] : null;
+}
+
+function showToast(msg, type) {
+  var wrap = document.getElementById('toasts');
+  var icons = {tok:'✅', terr:'❌', tinf:'ℹ️', twarn:'⚠️'};
+  var el = document.createElement('div');
+  el.className = 'toast ' + (type || 'tinf');
+  el.innerHTML = '<span>' + (icons[type] || 'ℹ️') + '</span><span>' + esc(msg) + '</span>';
+  wrap.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 4500);
+}
+
+function stopPoll() {
+  if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; }
+  state.pollBusy = false;
+}
+
+// ── CANVAS ─────────────────────────────────────────────────────────────────
+function startCanvas() {
+  var cv = document.getElementById('bgc');
   if (!cv) return;
-  const ctx = cv.getContext('2d');
-  const rsz = () => { cv.width = innerWidth; cv.height = innerHeight; };
-  rsz(); addEventListener('resize', rsz);
-  const C = ['#6366f1','#818cf8','#22c55e','#a5b4fc'];
-  const pts = Array.from({length:60}, () => ({
-    x: Math.random()*cv.width,  y: Math.random()*cv.height,
-    vx:(Math.random()-.5)*.22,  vy:(Math.random()-.5)*.22,
-    r: Math.random()*1.3+.3,    c: C[0|Math.random()*4],
-  }));
-  const D = 100;
-  (function loop() {
+  var ctx = cv.getContext('2d');
+  function resize() { cv.width = window.innerWidth; cv.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  var COLORS = ['#6366f1','#818cf8','#22c55e','#a5b4fc'];
+  var pts = [];
+  for (var i = 0; i < 55; i++) {
+    pts.push({
+      x: Math.random() * cv.width, y: Math.random() * cv.height,
+      vx: (Math.random() - 0.5) * 0.22, vy: (Math.random() - 0.5) * 0.22,
+      r: Math.random() * 1.3 + 0.3,
+      c: COLORS[Math.floor(Math.random() * COLORS.length)]
+    });
+  }
+  var D = 100;
+  function draw() {
     ctx.clearRect(0, 0, cv.width, cv.height);
-    for (const p of pts) {
+    for (var i = 0; i < pts.length; i++) {
+      var p = pts[i];
       p.x += p.vx; p.y += p.vy;
-      if (p.x<0) p.x=cv.width;  if (p.x>cv.width) p.x=0;
-      if (p.y<0) p.y=cv.height; if (p.y>cv.height) p.y=0;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fillStyle = p.c; ctx.globalAlpha = .45; ctx.fill();
+      if (p.x < 0) p.x = cv.width; if (p.x > cv.width) p.x = 0;
+      if (p.y < 0) p.y = cv.height; if (p.y > cv.height) p.y = 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.c; ctx.globalAlpha = 0.45; ctx.fill();
     }
-    for (let i=0; i<pts.length; i++) for (let j=i+1; j<pts.length; j++) {
-      const dx = pts[i].x-pts[j].x, dy = pts[i].y-pts[j].y;
-      const d  = Math.sqrt(dx*dx + dy*dy);
-      if (d < D) {
-        ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y);
-        ctx.strokeStyle = pts[i].c; ctx.globalAlpha = (1-d/D)*.07;
-        ctx.lineWidth = .5; ctx.stroke();
+    for (var i = 0; i < pts.length; i++) {
+      for (var j = i + 1; j < pts.length; j++) {
+        var dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+        var d = Math.sqrt(dx*dx + dy*dy);
+        if (d < D) {
+          ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y);
+          ctx.strokeStyle = pts[i].c; ctx.globalAlpha = (1 - d/D) * 0.07;
+          ctx.lineWidth = 0.5; ctx.stroke();
+        }
       }
     }
     ctx.globalAlpha = 1;
-    requestAnimationFrame(loop);
-  })();
-})();
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  buildSidebar();
-  buildSvcs();
-  initCtxMenu();
-  document.addEventListener('keydown', e => { if (e.key==='Escape') App.closeCtx(); });
-  // Show total count
-  const total = Object.values(LOCAL_NUMS).reduce((s,a)=>s+a.length, 0);
-  const el = document.getElementById('hsiN');
-  if (el) el.textContent = total + '+';
-});
-
-// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+// ── SIDEBAR ────────────────────────────────────────────────────────────────
 function buildSidebar() {
-  const regions = [...new Set(COUNTRIES.map(c=>c.region))];
-  document.getElementById('sbList').innerHTML = regions.map(r => `
-    <div class="sb-region">${r}</div>
-    ${COUNTRIES.filter(c=>c.region===r).map(c=>`
-      <div class="ci${S.country?.code===c.code?' on':''}"
-           id="ci_${c.code}" data-name="${c.name.toLowerCase()} ${r.toLowerCase()}"
-           onclick="App.pick('${c.code}')">
-        <span class="ci-flag">${c.flag}</span>
-        <span class="ci-name">${c.name}</span>
-        <span class="ci-arr">›</span>
-      </div>`).join('')}
-  `).join('');
-}
-
-// ── SERVICES ──────────────────────────────────────────────────────────────────
-function buildSvcs() {
-  document.getElementById('svcs').innerHTML = SVCS.map(s => `
-    <button class="sc${S.svc===s.id?' on':''}"
-            onclick="App.setSvc(${JSON.stringify(s.id)}, this)">
-      ${s.icon ? s.icon+' ' : ''}${s.name}
-    </button>`).join('');
-}
-
-// ── PICK COUNTRY — uses local data, instant ───────────────────────────────────
-function pickCountry(code) {
-  const c = COUNTRIES.find(x=>x.code===code);
-  if (!c) return;
-  S.country = c;
-
-  // Update sidebar
-  document.querySelectorAll('.ci').forEach(el=>el.classList.remove('on'));
-  const el = document.getElementById('ci_'+code);
-  if (el) { el.classList.add('on'); el.scrollIntoView({block:'nearest'}); }
-
-  updateBc();
-  closeInbox();
-  loadNums();
-}
-
-// ── LOAD NUMBERS — LOCAL + OPTIONAL WORKER BACKUP ────────────────────────────
-function loadNums() {
-  showView('numsView');
-  const list = document.getElementById('numsList');
-  // Instant local numbers first
-  const local = localShuffle(S.country.code);
-  S.nums = local;
-  renderNums(local);
-  document.getElementById('nvTtl').textContent = `${S.country.flag} ${S.country.name}`;
-  document.getElementById('nvBadge').textContent = `${local.length} numbers`;
-  document.getElementById('nvTs').textContent = `Loaded ${new Date().toLocaleTimeString()}`;
-
-  // Also try worker in background to potentially get fresh/different numbers
-  // If worker fails, we already have local numbers — no error shown
-  tryWorkerNums(S.country.code);
-}
-
-async function tryWorkerNums(code) {
-  try {
-    const url = `${W}/numbers/${code}?r=${Date.now()}`;
-    const r   = await fetch(url, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(5000),
+  var regions = [];
+  COUNTRIES.forEach(function(c) { if (regions.indexOf(c.region) === -1) regions.push(c.region); });
+  var html = '';
+  regions.forEach(function(r) {
+    html += '<div class="sb-region">' + r + '</div>';
+    COUNTRIES.filter(function(c){ return c.region === r; }).forEach(function(c) {
+      var active = state.country && state.country.code === c.code ? ' active' : '';
+      html += '<div class="c-item' + active + '" id="ci_' + c.code + '" data-name="' + c.name.toLowerCase() + ' ' + r.toLowerCase() + '" onclick="pickCountry(\'' + c.code + '\')">';
+      html += '<span class="c-flag">' + c.flag + '</span>';
+      html += '<span class="c-name">' + c.name + '</span>';
+      html += '<span class="c-arrow">›</span></div>';
     });
-    if (!r.ok) return;
-    const d = await r.json();
-    if (!d.ok || !Array.isArray(d.numbers) || !d.numbers.length) return;
-    // Only update if still on same country
-    if (S.country?.code !== code) return;
-    S.nums = d.numbers;
-    renderNums(d.numbers);
-    document.getElementById('nvBadge').textContent = `${d.numbers.length} numbers`;
-    document.getElementById('nvTs').textContent = `Live — ${new Date().toLocaleTimeString()}`;
-  } catch(_) {
-    // silently ignore — local numbers already showing
+  });
+  document.getElementById('sbList').innerHTML = html;
+}
+
+// ── SERVICES ────────────────────────────────────────────────────────────────
+function buildServices() {
+  var html = '';
+  SERVICES.forEach(function(s) {
+    var active = state.service === s.id ? ' active' : '';
+    var label = s.icon ? s.icon + ' ' + s.name : s.name;
+    html += '<button class="svc-btn' + active + '" onclick="pickService(' + JSON.stringify(s.id) + ',this)">' + label + '</button>';
+  });
+  document.getElementById('svcRow').innerHTML = html;
+}
+
+// ── PICK COUNTRY ────────────────────────────────────────────────────────────
+function pickCountry(code) {
+  var c = null;
+  COUNTRIES.forEach(function(x) { if (x.code === code) c = x; });
+  if (!c) return;
+  state.country = c;
+  buildSidebar();
+  var el = document.getElementById('ci_' + code);
+  if (el) el.scrollIntoView({block:'nearest'});
+  updateBC();
+  closeInbox();
+  loadNumbers();
+}
+window.pickCountry = pickCountry;
+
+// ── PICK SERVICE ───────────────────────────────────────────────────────────
+function pickService(id, btn) {
+  state.service = id;
+  document.querySelectorAll('.svc-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  updateBC();
+  if (state.active) {
+    updateInboxMeta();
+    showServiceWarn(id);
+  } else if (state.numbers.length) {
+    renderNumbers(state.numbers);
   }
 }
+window.pickService = pickService;
 
-// ── RENDER NUMBERS ────────────────────────────────────────────────────────────
-function renderNums(nums) {
-  const el  = document.getElementById('numsList');
+// ── LOAD NUMBERS (local instant) ─────────────────────────────────────────
+function loadNumbers() {
+  // Show numbers view
+  document.getElementById('viewHome').style.display  = 'none';
+  document.getElementById('viewNums').style.display  = '';
+  document.getElementById('viewInbox').style.display = 'none';
+
+  // Load instantly from local pool
+  var pool = NUM_POOL[state.country.code] || [];
+  var shuffled = doShuffle(pool).slice(0, 12);
+  var c = state.country;
+  state.numbers = shuffled.map(function(num, i) {
+    return { id: c.code + '_' + i, number: num, country: c.code, flag: c.flag, label: c.name };
+  });
+
+  document.getElementById('numsTitle').textContent = c.flag + ' ' + c.name;
+  document.getElementById('numsCount').textContent = state.numbers.length + ' numbers';
+  document.getElementById('numsTime').textContent  = 'Loaded ' + new Date().toLocaleTimeString();
+
+  renderNumbers(state.numbers);
+
+  // Try worker in background for fresh numbers (silent fail ok)
+  tryWorkerNumbers(state.country.code);
+}
+window.loadNumbers = loadNumbers;
+
+async function tryWorkerNumbers(code) {
+  try {
+    var url = WORKER + '/numbers/' + code + '?r=' + Date.now();
+    var r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return;
+    var d = await r.json();
+    if (!d.ok || !d.numbers || !d.numbers.length) return;
+    if (!state.country || state.country.code !== code) return;
+    state.numbers = d.numbers;
+    renderNumbers(d.numbers);
+    document.getElementById('numsCount').textContent = d.numbers.length + ' numbers';
+    document.getElementById('numsTime').textContent  = '🔄 ' + new Date().toLocaleTimeString();
+  } catch(e) { /* silent */ }
+}
+
+// ── RENDER NUMBERS ─────────────────────────────────────────────────────────
+function renderNumbers(nums) {
+  var list = document.getElementById('numsList');
   if (!nums || !nums.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-ico">📵</div><h3>No numbers</h3><p>Try another country.</p></div>`;
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📵</div><h3>No numbers</h3><p>Try another country.</p></div>';
     return;
   }
-  const svc  = S.svc ? SVCS.find(s=>s.id===S.svc) : null;
-  const meta = `${S.country.flag} ${S.country.name}${svc?` · ${svc.icon} ${svc.name}`:''}`;
-  el.innerHTML = `<div class="nums-wrap${S.view==='grid'?' gv':''}">` +
-    nums.map((n,i) => `
-      <div class="nr${S.active?.number===n.number?' on':''}" id="nr_${i}" onclick="App.openInbox(${i})">
-        <div class="nr-main">
-          <span class="nr-flag">${n.flag||S.country.flag}</span>
-          <div style="flex:1;min-width:0">
-            <div class="nr-num">${xe(n.number)}</div>
-            <div class="nr-meta">${meta}</div>
-          </div>
-          <span class="nr-online"><span class="nr-odot"></span>Online</span>
-        </div>
-        <div class="nr-acts">
-          <button class="nr-copy" onclick="event.stopPropagation();App.qCopy(${i})">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy
-          </button>
-          <button class="nr-menu" onclick="event.stopPropagation();App.openCtx(event,${i})">&#x22EF;</button>
-        </div>
-      </div>`).join('') + '</div>';
+  var svc  = state.service ? null : null;
+  SERVICES.forEach(function(s){ if (s.id === state.service) svc = s; });
+  var meta = state.country.flag + ' ' + state.country.name + (svc ? ' · ' + svc.icon + ' ' + svc.name : '');
+
+  var cls = 'nums-container' + (state.view === 'grid' ? ' grid' : '');
+  var html = '<div class="' + cls + '">';
+  nums.forEach(function(n, i) {
+    var active = state.active && state.active.number === n.number ? ' active' : '';
+    html += '<div class="num-card' + active + '" id="nc_' + i + '" onclick="openInbox(' + i + ')">';
+    html += '<div class="num-card-main">';
+    html += '<span class="num-flag">' + (n.flag || state.country.flag) + '</span>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div class="num-number">' + esc(n.number) + '</div>';
+    html += '<div class="num-meta">' + meta + '</div>';
+    html += '</div>';
+    html += '<span class="num-online"><span class="num-online-dot"></span>Online</span>';
+    html += '</div>';
+    html += '<div class="num-card-actions">';
+    html += '<button class="num-copy-btn" onclick="event.stopPropagation();quickCopyNum(' + i + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button>';
+    html += '<button class="num-menu-btn" onclick="event.stopPropagation();openCtxMenu(event,' + i + ')">&#x22EF;</button>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  list.innerHTML = html;
 }
 
-// ── OPEN INBOX ────────────────────────────────────────────────────────────────
+// ── OPEN INBOX ─────────────────────────────────────────────────────────────
 function openInbox(i) {
-  S.active = S.nums[i];
-  if (!S.active) return;
-  kill();
+  var n = state.numbers[i];
+  if (!n) return;
+  state.active   = n;
+  state.activeIdx = i;
+  stopPoll();
 
-  document.querySelectorAll('.nr').forEach(r=>r.classList.remove('on'));
-  const row = document.getElementById('nr_'+i);
-  if (row) row.classList.add('on');
+  // Highlight
+  document.querySelectorAll('.num-card').forEach(function(el){ el.classList.remove('active'); });
+  var nc = document.getElementById('nc_' + i);
+  if (nc) nc.classList.add('active');
 
-  const svc = S.svc ? SVCS.find(s=>s.id===S.svc) : null;
-  document.getElementById('ibNum').textContent   = S.active.number;
-  document.getElementById('ibMeta').textContent  = `${S.active.flag||S.country.flag} ${S.active.label||S.country.name}${svc?` · ${svc.icon} ${svc.name}`:''}`;
-  document.getElementById('nbVal').textContent   = S.active.number;
-  document.getElementById('inboxView').style.display = '';
+  // Fill inbox
+  document.getElementById('inboxNum').textContent  = n.number;
+  document.getElementById('copyBoxNum').textContent = n.number;
+  updateInboxMeta();
+  showServiceWarn(state.service);
+
+  // Show
+  document.getElementById('viewInbox').style.display = '';
   document.getElementById('smsBadge').textContent    = '';
-  document.getElementById('smsCont').innerHTML       = shimH(2);
+  document.getElementById('smsList').innerHTML       = makeShims(2);
 
   // Reset copy button
-  const cb = document.getElementById('copyBig');
-  if (cb) {
-    cb.innerHTML = `<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Number`;
-    cb.classList.remove('copied');
-  }
+  resetCopyBig();
 
-  updateBc();
-  document.getElementById('inboxView').scrollIntoView({behavior:'smooth', block:'nearest'});
+  // Scroll
+  document.getElementById('viewInbox').scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  // Start polling
   fetchSMS();
-  S.timer = setInterval(fetchSMS, POLL);
+  state.pollTimer = setInterval(fetchSMS, POLL_INTERVAL);
 }
+window.openInbox = openInbox;
 
 function closeInbox() {
-  kill();
-  S.active = null;
-  document.querySelectorAll('.nr').forEach(r=>r.classList.remove('on'));
-  document.getElementById('inboxView').style.display = 'none';
+  stopPoll();
+  state.active   = null;
+  state.activeIdx = -1;
+  document.querySelectorAll('.num-card').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('viewInbox').style.display = 'none';
+}
+window.closeInbox = closeInbox;
+
+function updateInboxMeta() {
+  var svc = null;
+  SERVICES.forEach(function(s){ if (s.id === state.service) svc = s; });
+  var meta = (state.active.flag || state.country.flag) + ' ' + (state.active.label || state.country.name);
+  if (svc && svc.id) meta += ' · ' + svc.icon + ' ' + svc.name;
+  document.getElementById('inboxMeta').textContent = meta;
 }
 
-// ── FETCH SMS (browser-side CORS proxies) ─────────────────────────────────────
-async function fetchSMS() {
-  if (S.busy || !S.active) return;
-  S.busy = true;
+function showServiceWarn(svcId) {
+  var box  = document.getElementById('svcWarnBox');
+  if (!box) return;
+  var info = svcId ? COMPAT[svcId] : null;
+  if (!info) { box.style.display = 'none'; return; }
+  box.className    = 'svc-warn-box ' + (info.ok ? 'svc-warn-ok' : 'svc-warn-partial');
+  box.innerHTML    = '<span>' + esc(info.msg) + '</span>';
+  box.style.display = 'flex';
+}
 
-  const rb  = document.getElementById('ibRef');
-  const ri  = document.getElementById('ibRefIco');
+function resetCopyBig() {
+  var btn = document.getElementById('btnCopyBig');
+  if (!btn) return;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Number';
+  btn.classList.remove('copied');
+}
+
+// ── FETCH SMS ──────────────────────────────────────────────────────────────
+async function fetchSMS() {
+  if (state.pollBusy || !state.active) return;
+  state.pollBusy = true;
+
+  var rb = document.getElementById('btnRefresh');
+  var ri = document.getElementById('refreshIcon');
   if (rb) rb.disabled = true;
   if (ri) ri.classList.add('spin');
 
   try {
-    const msgs = await getSMS(S.active.number);
+    var msgs = await getSMSMessages(state.active.number);
     renderSMS(msgs);
-  } catch (e) {
-    const sc = document.getElementById('smsCont');
-    if (sc) sc.innerHTML = `
-      <div class="wait-box">
-        <div class="wb-title">SMS load হয়নি</div>
-        <div class="wb-sub">${xe(e.message)}</div>
-        <button class="tbtn" onclick="App.refresh()" style="margin:10px auto 0">↻ আবার চেষ্টা</button>
-      </div>`;
+  } catch(e) {
+    var sc = document.getElementById('smsList');
+    if (sc) sc.innerHTML = '<div class="wait-box"><div class="wait-title">SMS load হয়নি</div><div class="wait-text">' + esc(e.message) + '</div><button class="btn-normal" onclick="doRefresh()" style="margin:12px auto 0;display:inline-flex">↻ Retry</button></div>';
   } finally {
-    S.busy = false;
+    state.pollBusy = false;
     if (rb) rb.disabled = false;
     if (ri) ri.classList.remove('spin');
   }
 }
 
-// Try 3 CORS proxies in sequence
-async function getSMS(phone) {
-  const n = phone.replace('+', '');
-  const target = `https://sms24.me/en/numbers/${n}`;
-  const proxies = [
-    `https://corsproxy.io/?${encodeURIComponent(target)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}`,
-  ];
+async function getSMSMessages(phone) {
+  // Try worker first (best — no CORS limit)
+  try {
+    var url = WORKER + '/sms/' + encodeURIComponent(phone) + '?r=' + Date.now();
+    var r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) });
+    if (r.ok) {
+      var d = await r.json();
+      if (d.ok && Array.isArray(d.messages)) return d.messages;
+    }
+  } catch(e) { /* try proxies */ }
 
-  for (const url of proxies) {
+  // Fallback: CORS proxies
+  var n = phone.replace('+', '');
+  var target = 'https://sms24.me/en/numbers/' + n;
+  var proxies = [
+    'https://corsproxy.io/?' + encodeURIComponent(target),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(target),
+  ];
+  for (var i = 0; i < proxies.length; i++) {
     try {
-      const r = await fetch(url, {
-        cache:  'no-store',
-        signal: AbortSignal.timeout(9000),
-      });
-      if (!r.ok) continue;
-      const html = await r.text();
+      var r2 = await fetch(proxies[i], { cache: 'no-store', signal: AbortSignal.timeout(9000) });
+      if (!r2.ok) continue;
+      var html = await r2.text();
       if (html.length < 200) continue;
-      const msgs = parseTableMsgs(html);
-      // Return even if empty — means no SMS yet (not an error)
-      return msgs;
-    } catch (_) { continue; }
+      return parseSMSTable(html);
+    } catch(e) { continue; }
   }
-  // All proxies failed — return empty (waiting state)
   return [];
 }
 
-function parseTableMsgs(html) {
-  const msgs = [], seen = new Set();
-  const SKIP = /^(message|from|sender|time|date|received|body|content|sms|inbox|text|#|\s*)$/i;
-  const trRx = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  let tr;
+function parseSMSTable(html) {
+  var msgs = [], seen = {};
+  var SKIP = /^(message|from|sender|time|date|received|body|content|sms|inbox|text|#|\s*)$/i;
+  var trRx = /<tr[^>]*>([\s\S]*?)<\/tr>/gi, tr;
   while ((tr = trRx.exec(html)) !== null) {
-    const row  = tr[1];
-    const tdRx = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-    const cells = []; let td;
+    var row = tr[1];
+    var tdRx = /<td[^>]*>([\s\S]*?)<\/td>/gi, cells = [], td;
     while ((td = tdRx.exec(row)) !== null) {
-      const t = stripTags(td[1]);
+      var t = stripTags(td[1]);
       if (t) cells.push(t);
     }
     if (cells.length < 2) continue;
-    const from = cells[0] || 'Unknown';
-    const body = cells[1];
-    const time = cells[cells.length-1] || '';
-    if (!body || body.length < 3 || SKIP.test(body) || seen.has(body)) continue;
-    seen.add(body);
-    msgs.push({ from: from.slice(0,60), body, time });
+    var from = (cells[0] || 'Unknown').slice(0, 60);
+    var body = cells[1];
+    var time = cells[cells.length - 1] || '';
+    if (!body || body.length < 3 || SKIP.test(body) || seen[body]) continue;
+    seen[body] = true;
+    msgs.push({ from: from, body: body, time: time });
   }
   return msgs;
 }
@@ -407,171 +506,194 @@ function stripTags(h) {
     .replace(/\s+/g,' ').trim();
 }
 
-// ── RENDER SMS ────────────────────────────────────────────────────────────────
+// ── RENDER SMS ─────────────────────────────────────────────────────────────
 function renderSMS(msgs) {
-  const sc    = document.getElementById('smsCont');
-  const badge = document.getElementById('smsBadge');
+  var sc    = document.getElementById('smsList');
+  var badge = document.getElementById('smsBadge');
   if (!sc) return;
 
-  if (badge) badge.textContent = msgs.length ? `${msgs.length} message${msgs.length>1?'s':''}` : '';
+  if (badge) badge.textContent = msgs.length ? (msgs.length + ' message' + (msgs.length > 1 ? 's' : '')) : '';
 
   if (!msgs.length) {
-    sc.innerHTML = `
-      <div class="wait-box">
-        <div class="wb-ico">📬</div>
-        <div class="wb-title">Waiting for SMS</div>
-        <div class="wb-sub">
-          Enter <b>${xe(S.active.number)}</b> on your platform.<br>
-          OTP will appear here automatically. <span class="blink">▋</span>
-        </div>
-        <div class="wb-note">Auto-refresh every ${POLL/1000}s</div>
-      </div>`;
+    var showNext = state.service && COMPAT[state.service] && !COMPAT[state.service].ok;
+    sc.innerHTML = '<div class="wait-box">' +
+      '<div class="wait-icon">📬</div>' +
+      '<div class="wait-title">Waiting for SMS</div>' +
+      '<div class="wait-text">Enter <strong>' + esc(state.active.number) + '</strong> on your platform.<br>OTP will appear here. <span class="blink">▋</span></div>' +
+      '<div class="wait-note">Auto-refresh every ' + (POLL_INTERVAL/1000) + 's</div>' +
+      (showNext ? '<button class="btn-next-num" onclick="nextNumber()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>Got "Maximum attempts"? Try next number</button>' : '') +
+      '</div>';
     return;
   }
 
-  sc.innerHTML = msgs.map(m => {
-    const otp = getOTP(m.body);
-    return `
-      <div class="sms-card">
-        <div class="sc-hd">
-          <span class="sc-from">${xe(m.from||'UNKNOWN')}</span>
-          <span class="sc-time">${xe(m.time||'')}</span>
-        </div>
-        <div class="sc-body">${xe(m.body||'')}</div>
-        ${otp ? `
-          <div class="otp-block">
-            <div>
-              <div class="otp-lbl">OTP CODE DETECTED</div>
-              <div class="otp-dig">${otp}</div>
-            </div>
-            <button class="otp-cp" onclick="App.copyOTP(this,'${otp}')">
-              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copy OTP
-            </button>
-          </div>` : ''}
-      </div>`;
-  }).join('');
+  var html = '';
+  msgs.forEach(function(m) {
+    var otp = extractOTP(m.body);
+    html += '<div class="sms-card">';
+    html += '<div class="sms-from-row"><span class="sms-from">' + esc(m.from || 'UNKNOWN') + '</span><span class="sms-time">' + esc(m.time || '') + '</span></div>';
+    html += '<div class="sms-body">' + esc(m.body || '') + '</div>';
+    if (otp) {
+      html += '<div class="otp-block"><div><div class="otp-label">OTP CODE DETECTED</div><div class="otp-code">' + otp + '</div></div>';
+      html += '<button class="btn-copy-otp" onclick="copyOTP(this,\'' + otp + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy OTP</button></div>';
+    }
+    html += '</div>';
+  });
+  sc.innerHTML = html;
 }
 
-// ── CONTEXT MENU ──────────────────────────────────────────────────────────────
-function initCtxMenu() {
-  document.getElementById('ctxCopy').onclick   = () => { App.qCopy(S.ctxIdx);      App.closeCtx(); };
-  document.getElementById('ctxInbox').onclick  = () => { openInbox(S.ctxIdx);      App.closeCtx(); };
-  document.getElementById('ctxReport').onclick = () => { toast('Reported. Thank you!','tinf'); App.closeCtx(); };
+// ── CONTEXT MENU ───────────────────────────────────────────────────────────
+function openCtxMenu(e, i) {
+  e.preventDefault(); e.stopPropagation();
+  state.ctxIdx = i;
+  var menu = document.getElementById('ctxMenu');
+  menu.classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+  var x = e.clientX, y = e.clientY;
+  if (x + 195 > window.innerWidth)  x = window.innerWidth  - 200;
+  if (y + 150 > window.innerHeight) y = window.innerHeight - 155;
+  menu.style.left = x + 'px';
+  menu.style.top  = y + 'px';
 }
+window.openCtxMenu = openCtxMenu;
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
-const getOTP = t => { const m=(t||'').match(/\b(\d{4,8})\b/); return m?m[1]:null; };
-const xe = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const shimH = n => Array.from({length:n},(_,i)=>`<div class="shim" style="height:${64-i*6}px;opacity:${1-i*.25}"></div>`).join('');
-const kill  = () => { if(S.timer){clearInterval(S.timer);S.timer=null;} S.busy=false; };
-
-function showView(id) {
-  document.getElementById('homeView').style.display  = id==='homeView'  ? '' : 'none';
-  document.getElementById('numsView').style.display  = id==='numsView'  ? '' : 'none';
-  document.getElementById('inboxView').style.display = 'none';
+function closeCtx() {
+  document.getElementById('ctxMenu').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
 }
+window.closeCtx = closeCtx;
 
-function updateBc() {
-  const bc = document.getElementById('bc');
-  if (!bc) return;
-  bc.style.display = S.country ? 'flex' : 'none';
-  const bcC = document.getElementById('bcC');
-  if (bcC) bcC.textContent = `${S.country.flag} ${S.country.name}`;
-  const svc = S.svc ? SVCS.find(s=>s.id===S.svc) : null;
-  const sep = document.getElementById('bcSep'), bs = document.getElementById('bcS');
-  if (sep && bs) {
-    if (svc && svc.id) { sep.style.display=''; bs.style.display=''; bs.textContent=`${svc.icon} ${svc.name}`; }
-    else               { sep.style.display='none'; bs.style.display='none'; }
+function ctxAction(action) {
+  var i = state.ctxIdx;
+  closeCtx();
+  if (action === 'copy')   { quickCopyNum(i); }
+  if (action === 'inbox')  { openInbox(i); }
+  if (action === 'next')   { nextNumber(); }
+  if (action === 'report') { showToast('Number reported. Thank you!', 'tinf'); }
+}
+window.ctxAction = ctxAction;
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+function goHome() {
+  stopPoll();
+  state.country = null; state.active = null; state.numbers = [];
+  buildSidebar();
+  document.getElementById('viewHome').style.display  = '';
+  document.getElementById('viewNums').style.display  = 'none';
+  document.getElementById('viewInbox').style.display = 'none';
+  document.getElementById('breadcrumb').style.display = 'none';
+}
+window.goHome = goHome;
+
+function updateBC() {
+  var bc = document.getElementById('breadcrumb');
+  if (!state.country) { bc.style.display = 'none'; return; }
+  bc.style.display = 'flex';
+  document.getElementById('bcCountry').textContent = state.country.flag + ' ' + state.country.name;
+  var svc = null; SERVICES.forEach(function(s){ if (s.id === state.service) svc = s; });
+  var sep = document.getElementById('bcSvcSep'), sv = document.getElementById('bcSvc');
+  if (svc && svc.id) {
+    sep.style.display = ''; sv.style.display = '';
+    sv.textContent = svc.icon + ' ' + svc.name;
+  } else {
+    sep.style.display = 'none'; sv.style.display = 'none';
   }
 }
 
-function toast(msg, cls='tinf') {
-  const w  = document.getElementById('toasts');
-  const el = document.createElement('div');
-  el.className = 'toast ' + cls;
-  const ico = cls==='tok'?'✅':cls==='terr'?'❌':'ℹ️';
-  el.innerHTML = `<span>${ico}</span><span>${xe(msg)}</span>`;
-  w.appendChild(el);
-  setTimeout(() => el.remove(), 4500);
+function jumpRegion(region) {
+  var first = null;
+  COUNTRIES.forEach(function(c){ if (!first && c.region === region) first = c; });
+  if (first) pickCountry(first.code);
 }
+window.jumpRegion = jumpRegion;
 
-// ── PUBLIC API ─────────────────────────────────────────────────────────────────
-const App = {
-  pick: pickCountry,
-  setSvc(id, btn) {
-    S.svc = id;
-    document.querySelectorAll('.sc').forEach(b=>b.classList.remove('on'));
-    if (btn) btn.classList.add('on');
-    updateBc();
-    if (S.active) {
-      const m = document.getElementById('ibMeta');
-      if (m) { const svc=id?SVCS.find(s=>s.id===id):null; m.textContent=`${S.active.flag||S.country.flag} ${S.active.label||S.country.name}${svc?` · ${svc.icon} ${svc.name}`:''}`; }
-    } else if (S.nums.length) renderNums(S.nums);
-  },
-  filterC(q) {
-    const v = q.toLowerCase().trim();
-    document.querySelectorAll('.ci').forEach(el => el.classList.toggle('hid', !!v && !el.dataset.name.includes(v)));
-    document.querySelector('.sb-x').style.display = v ? '' : 'none';
-  },
-  clearSearch() { const i=document.getElementById('srchInp'); if(i){i.value='';App.filterC('');} },
-  jumpTo(region) { const f=COUNTRIES.find(c=>c.region===region); if(f) pickCountry(f.code); },
-  shuffle() { if(!S.country){toast('Select a country first','terr');return;} loadNums(); toast('Numbers shuffled!','tinf'); },
-  setView(v) {
-    S.view = v;
-    document.getElementById('vbL').classList.toggle('on', v==='list');
-    document.getElementById('vbG').classList.toggle('on', v==='grid');
-    if (S.nums.length && !S.active) renderNums(S.nums);
-  },
-  openInbox,
-  closeInbox,
-  refresh() { S.busy=false; fetchSMS(); },
-  copyActive() {
-    if (!S.active) return;
-    navigator.clipboard.writeText(S.active.number).then(() => {
-      toast('Number copied!', 'tok');
-      const cb = document.getElementById('copyBig');
-      if (cb) {
-        cb.innerHTML = '✓ Copied!'; cb.classList.add('copied');
-        setTimeout(() => {
-          cb.innerHTML = `<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Number`;
-          cb.classList.remove('copied');
-        }, 2000);
-      }
-    }).catch(() => toast('Copy failed','terr'));
-  },
-  qCopy(i) {
-    const n = S.nums[i]; if (!n) return;
-    navigator.clipboard.writeText(n.number).then(()=>toast('Copied: '+n.number,'tok')).catch(()=>toast('Failed','terr'));
-  },
-  copyOTP(btn, code) {
-    navigator.clipboard.writeText(code).then(() => {
-      const o = btn.innerHTML; btn.innerHTML='✓ Copied!'; btn.classList.add('copied');
-      toast('OTP copied: '+code, 'tok');
-      setTimeout(() => { btn.innerHTML=o; btn.classList.remove('copied'); }, 2500);
-    }).catch(() => toast('Copy failed','terr'));
-  },
-  openCtx(e, i) {
-    e.preventDefault(); e.stopPropagation();
-    S.ctxIdx = i;
-    const m = document.getElementById('ctxMenu');
-    m.classList.add('show');
-    document.getElementById('overlay').classList.add('show');
-    let x=e.clientX, y=e.clientY;
-    if (x+190 > innerWidth)  x = innerWidth  - 195;
-    if (y+130 > innerHeight) y = innerHeight - 135;
-    m.style.left = x+'px'; m.style.top = y+'px';
-  },
-  closeCtx() {
-    document.getElementById('ctxMenu')?.classList.remove('show');
-    document.getElementById('overlay')?.classList.remove('show');
-  },
-  goHome() {
-    kill(); S.country=null; S.active=null; S.nums=[];
-    document.querySelectorAll('.ci').forEach(el=>el.classList.remove('on'));
-    showView('homeView');
-    document.getElementById('bc').style.display = 'none';
-  },
-};
+// ── ACTIONS ────────────────────────────────────────────────────────────────
+function doShuffle() {
+  if (!state.country) { showToast('Select a country first', 'terr'); return; }
+  loadNumbers();
+  showToast('Numbers shuffled!', 'tinf');
+}
+window.doShuffle = doShuffle;
 
-window.App = App;
+function doRefresh() { state.pollBusy = false; fetchSMS(); }
+window.doRefresh = doRefresh;
+
+function setView(v) {
+  state.view = v;
+  document.getElementById('btnList').classList.toggle('vt-active', v === 'list');
+  document.getElementById('btnGrid').classList.toggle('vt-active', v === 'grid');
+  if (state.numbers.length && !state.active) renderNumbers(state.numbers);
+}
+window.setView = setView;
+
+function nextNumber() {
+  if (!state.numbers.length) return;
+  var next = (state.activeIdx + 1) % state.numbers.length;
+  showToast('Trying next number...', 'tinf');
+  openInbox(next);
+}
+window.nextNumber = nextNumber;
+
+function copyActiveNum() {
+  if (!state.active) return;
+  navigator.clipboard.writeText(state.active.number).then(function() {
+    showToast('Number copied!', 'tok');
+    var btn = document.getElementById('btnCopyBig');
+    if (btn) {
+      btn.innerHTML = '✓ Copied!'; btn.classList.add('copied');
+      setTimeout(function(){ resetCopyBig(); }, 2000);
+    }
+  }).catch(function(){ showToast('Copy failed', 'terr'); });
+}
+window.copyActiveNum = copyActiveNum;
+
+function quickCopyNum(i) {
+  var n = state.numbers[i]; if (!n) return;
+  navigator.clipboard.writeText(n.number)
+    .then(function(){ showToast('Copied: ' + n.number, 'tok'); })
+    .catch(function(){ showToast('Copy failed', 'terr'); });
+}
+window.quickCopyNum = quickCopyNum;
+
+function copyOTP(btn, code) {
+  navigator.clipboard.writeText(code).then(function() {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied!'; btn.classList.add('copied');
+    showToast('OTP copied: ' + code, 'tok');
+    setTimeout(function(){ btn.innerHTML = orig; btn.classList.remove('copied'); }, 2500);
+  }).catch(function(){ showToast('Copy failed', 'terr'); });
+}
+window.copyOTP = copyOTP;
+
+function filterCountries(q) {
+  var v = q.toLowerCase().trim();
+  document.querySelectorAll('.c-item').forEach(function(el) {
+    var n = el.dataset.name || '';
+    el.classList.toggle('hidden', !!v && n.indexOf(v) === -1);
+  });
+  var btn = document.getElementById('sbClearBtn');
+  if (btn) btn.style.display = v ? '' : 'none';
+}
+window.filterCountries = filterCountries;
+
+function clearSearch() {
+  var inp = document.getElementById('searchInp');
+  if (inp) { inp.value = ''; filterCountries(''); }
+}
+window.clearSearch = clearSearch;
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  startCanvas();
+  buildSidebar();
+  buildServices();
+
+  // Stat count
+  var total = 0;
+  Object.values(NUM_POOL).forEach(function(a){ total += a.length; });
+  var el = document.getElementById('statNums');
+  if (el) el.textContent = total + '+';
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCtx();
+  });
+});
